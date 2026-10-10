@@ -45,7 +45,7 @@
 (function(){
   const {EVENTS,usd,fmt,$,$$,esc,motion,RATE,P2P_REF,toast}=GT;
   // aforos de ejemplo por evento propio, dentro de la capacidad publicada de cada salón
-  const CAPS={gala:[600,40,80],salsa:[500,24,120],bolero:[140,20,40],fullday:[300,12,120]};
+  const CAPS={gala:[600,40,80],salsa:[500,24,120],bolero:[140,20,40],fullday:[300,12,120],canaima:[30,8,12],manglar:[250,20,60]};
   const OWN=EVENTS.filter(e=>e.own);
   const ALL=[];
   OWN.forEach(e=>e.sessions.forEach(s=>{

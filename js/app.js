@@ -31,6 +31,8 @@
     mcbo: { city: "Maracaibo", addr: "Av. El Milagro, sector Don Bosco, Maracaibo, Zulia" },
     mat: { city: "Maturín", addr: "Av. Bella Vista, km 3, vía La Cruz, Maturín, Monagas" },
     mer: { city: "Mérida", addr: "Av. Universidad, sector Milla, Mérida" },
+    can: { city: "Canaima", addr: "Parque Nacional Canaima, Bolívar (acceso en avioneta desde Maiquetía)" },
+    mrr: { city: "Morrocoy", addr: "Av. Principal Morón-Coro, recta de Tucacas, Falcón" },
   };
   const tb = (k, venue, rest) => Object.assign({ id: k, city: TB[k].city, venue: "Tibisay " + TB[k].city + " · " + venue, addr: TB[k].addr }, rest);
   const EVENTS = [
@@ -73,6 +75,22 @@
       sessions: [
         tb("mcbo", "Piscina y playa del lago", { date: "2026-11-08", day: "dom 8 nov", doors: "9:00 am", start: "9:00 am", hotel: 95, areas: A(35, 120, 55, [140, 7, 60], ["Full Day", "Palapa privada", "Full Day con almuerzo"]) }),
       ].map((s) => Object.assign(s, { areas: s.areas.map((a, i) => Object.assign(a, { note: ["Piscina, playa del lago y tumbona por orden de llegada.", "Palapa para hasta 6 personas, con servicio de mesonero.", "Incluye almuerzo zuliano y una bebida."][i] })) })),
+    },
+    {
+      id: "canaima", own: true, cat: "Experiencias", title: "Retiro de Bienestar en Canaima",
+      tag: "Fin de semana frente a los tepuyes", age: "+18", refund: "full",
+      desc: "Tres días en el campamento Tibisay Canaima: yoga al amanecer frente a los tepuyes, meditación al atardecer, cocina de la zona y excursión a Salto Sapo, Hacha y Golondrina. Facilitadores, programa y precios de ejemplo.",
+      sessions: [
+        tb("can", "Campamento y Salón Tepuy", { date: "2026-11-13", day: "vie 13 a dom 15 nov", doors: "10:00 am", start: "11:00 am", areas: A(180, 690, 520, [12, 3, 4], ["Pase del retiro", "Retiro con suite y boleto aéreo", "Retiro con habitación doble"]) }),
+      ].map((s) => Object.assign(s, { areas: s.areas.map((a, i) => Object.assign(a, { note: ["Todas las actividades y comidas del retiro. Hospedaje y vuelo por tu cuenta.", "Suite matrimonial deluxe, pensión completa y boleto Maiquetía–Canaima–Maiquetía.", "Habitación doble compartida y pensión completa. Vuelo por tu cuenta."][i] })) })),
+    },
+    {
+      id: "manglar", own: true, cat: "Música en vivo", title: "Atardecer en el Manglar",
+      tag: "Sunset frente al mar", age: "+18", refund: "weather",
+      desc: "DJ y saxofón en vivo en la terraza del Tibisay Morrocoy mientras cae el sol sobre la playa de Tucacas, con coctelería y parrilla. Artistas por anunciar (ejemplo).",
+      sessions: [
+        tb("mrr", "Terraza y piscina frente a la playa", { date: "2026-11-07", day: "sáb 7 nov", doors: "4:00 pm", start: "5:00 pm", hotel: 120, areas: A(15, 60, 30, [140, 6, 30], ["General", "Toldo frente al mar", "Terraza con asiento"]) }),
+      ].map((s) => Object.assign(s, { areas: s.areas.map((a, i) => Object.assign(a, { note: ["De pie en la terraza y la orilla de la piscina.", "Toldo con tumbonas y servicio de mesa (hasta 4 personas).", "Mesa en la terraza con vista al mar."][i] })) })),
     },
     {
       id: "akapellah", poster: true, cat: "Conciertos", title: "Akapellah: La Cruz Tour",
