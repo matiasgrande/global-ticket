@@ -61,25 +61,26 @@
 (function(){
   const {getEvent,usd,bs,toBs,minPrice,artHTML,store,$,$$,esc,REFUND,motion,fmt,RATE}=GT;
   const q=new URLSearchParams(location.search);
-  const ev=getEvent(q.get("e")||"cacho");
+  const ev=getEvent(q.get("e"));
   document.title=ev.title+" · Global Ticket";
   $("#ph").innerHTML=artHTML(ev);
   $("#title").textContent=ev.title; $("#desc").textContent=ev.desc;
+  if(ev.src) $("#desc").insertAdjacentHTML("afterend",`<p class="small muted" style="max-width:56ch;margin-top:10px">Evento real, mostrado como ejemplo de catálogo. Fechas, sedes y precios se leyeron en <a href="${esc(ev.src.url)}" rel="noopener" target="_blank">${esc(ev.src.name)}</a> el 10 oct 2026; la disponibilidad es de ejemplo. Global Ticket no vende estas entradas.</p>`);
   const MES=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
   $("#tags").innerHTML=`<span class="tag solid">${esc(ev.cat)}</span><span class="tag solid">${esc(ev.tag)}</span><span class="tag solid">Edad: ${esc(ev.age)}</span>`;
   $("#refund").textContent=REFUND[ev.refund];
-  const first=ev.sessions.find(s=>!s.soldOut);
+  const first=ev.sessions.find(s=>!s.soldOut)||ev.sessions[0], allSold=ev.sessions.every(s=>s.soldOut);
   let sid=q.get("s")||(store.get().eventId===ev.id&&store.get().sessionId)||first.id;
-  if(ev.sessions.find(s=>s.id===sid&&s.soldOut)) sid=first.id;
-  $("#dates").insertAdjacentHTML("beforeend",ev.sessions.map(s=>{const m=minPrice(s);const d=new Date(s.date+"T12:00:00");return `<label class="opt"><input type="radio" name="ses" value="${s.id}" ${s.id===sid?"checked":""} ${s.soldOut?"disabled":""}><span class="dtb"><b>${d.getDate()}</b><span>${MES[d.getMonth()]}</span></span><span><span class="nm">${esc(ev.title.split(":")[0])} · ${esc(s.city)}</span><span class="muted small">${esc(s.day)} · ${esc(s.start)}</span></span><span class="st">${s.soldOut?'<span class="tag danger">Agotado</span>':`<span class="usd">${usd(m)}</span><span class="bsv">${bs(toBs(m))}</span>`}</span></label>`}).join(""));
+  if(!allSold&&ev.sessions.find(s=>s.id===sid&&s.soldOut)) sid=first.id;
+  $("#dates").insertAdjacentHTML("beforeend",ev.sessions.map(s=>{const m=minPrice(s);const d=new Date(s.date+"T12:00:00");return `<label class="opt"><input type="radio" name="ses" value="${s.id}" ${s.id===sid?"checked":""} ${s.soldOut&&!allSold?"disabled":""}><span class="dtb"><b>${d.getDate()}</b><span>${MES[d.getMonth()]}</span></span><span><span class="nm">${esc(ev.title.split(":")[0])} · ${esc(s.city)}</span><span class="muted small">${esc(s.day)} · ${esc(s.start)}</span></span><span class="st">${s.soldOut?'<span class="tag danger">Agotado</span>':`<span class="usd">${usd(m)}</span><span class="bsv">${bs(toBs(m))}</span>`}</span></label>`}).join(""));
   function show(){
     const s=ev.sessions.find(x=>x.id===$("input[name=ses]:checked").value);
     const m=minPrice(s);
     $("#meta").textContent=s.city+" · "+s.day+" · "+s.start;
     $("#prices").innerHTML=s.areas.map(a=>`<div class="ln"><span><strong>${esc(a.name)}</strong>${a.left===0?' <span class="tag danger">Agotado</span>':a.left<=15?` <span class="tag">Quedan ${a.left}</span>`:""}</span><span class="st"><span class="price">${usd(a.usd)}</span><br><span class="bsv small">${bs(toBs(a.usd))}</span></span></div>`).join("")+`<div class="ln tax"><span>Impuestos (IVA/IGTF)</span><span>Por definir</span></div>`;
     $("#ratenote").innerHTML="Tasa BCV del día:<b>"+fmt(RATE,2)+" Bs/USD</b>· ejemplo";
-    $("#facts").innerHTML=`<li><b>Sede</b><span>${esc(s.venue)}<br><span class="muted small">${esc(s.addr)}</span></span></li><li><b>Puertas</b><span>Abren a las ${s.doors}. El show empieza a las ${s.start}. Llega con tiempo: la revisión del QR toma unos minutos.</span></li><li><b>Edad</b><span>${ev.age==="Todo público"?"Todo público. Menores de 12 años entran con un adulto.":"Mayores de "+ev.age.replace("+","")+" años. Se pide cédula en la puerta."}</span></li>`;
-    $("#cta-usd").textContent=usd(m); $("#cta-ves").textContent=bs(toBs(m))+" · tasa BCV";
+    $("#facts").innerHTML=`<li><b>Sede</b><span>${esc(s.venue)}<br><span class="muted small">${esc(s.addr)}</span></span></li><li><b>Puertas</b><span>${s.doors?`Abren a las ${s.doors}. `:""}${/confirmar/.test(s.start)?"Hora de inicio por confirmar.":`El show empieza a las ${s.start}.`} Llega con tiempo: la revisión del QR toma unos minutos.</span></li><li><b>Edad</b><span>${ev.age==="Por confirmar"?"Por confirmar con el organizador.":ev.age==="Todo público"?"Todo público. Menores de 12 años entran con un adulto.":"Mayores de "+ev.age.replace("+","")+" años. Se pide cédula en la puerta."}</span></li>`;
+    if(allSold){$("#cta-usd").textContent="Agotado";$("#cta-ves").textContent="";$$("#cta,#cta-d").forEach(a=>{a.textContent="Avísame si se liberan";a.href="#wl-host";});}else{$("#cta-usd").textContent=usd(m); $("#cta-ves").textContent=bs(toBs(m))+" · tasa BCV";}
     store.patch({eventId:ev.id,sessionId:s.id});
     const o=store.get(); if(o.lastSession&&o.lastSession!==ev.id+s.id){store.patch({qty:{},hotel:false,deadline:null});} store.patch({lastSession:ev.id+s.id});
     motion(g=>g.fromTo("#prices .ln",{autoAlpha:0,y:8},{autoAlpha:1,y:0,duration:.35,ease:"power3.out",stagger:.05}));

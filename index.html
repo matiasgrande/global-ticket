@@ -23,7 +23,7 @@
           <p class="meta" id="feat-m"></p>
           <div class="buy">
             <div><span class="price" id="feat-usd"></span><br><span class="bsv small" id="feat-ves"></span></div>
-            <a class="btn" id="feat-go" href="evento.html?e=cacho">Comprar entradas</a>
+            <a class="btn" id="feat-go" href="evento.html">Comprar entradas</a>
           </div>
         </div>
       </div>
@@ -42,9 +42,9 @@
     <div class="sec-h"><h2>Todos los eventos</h2></div>
     <div class="sel2">
       <div class="field"><label class="sr" for="f-cat">Categoría</label>
-        <select id="f-cat"><option value="">Categorías</option><option>Conciertos</option><option>Fiestas y galas</option><option>Comedia</option><option>Música en vivo</option></select></div>
+        <select id="f-cat"><option value="">Categorías</option></select></div>
       <div class="field"><label class="sr" for="f-date">Fecha</label>
-        <select id="f-date"><option value="">Cualquier fecha</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select></div>
+        <select id="f-date"><option value="">Cualquier fecha</option></select></div>
     </div>
     <p class="muted small" id="count" aria-live="polite" style="margin:0 0 14px"></p>
     <div class="grid-ev" id="grid"></div>
@@ -70,22 +70,27 @@
 (function(){
   const {EVENTS,usd,bs,toBs,evMin,evFirst,artHTML,$,$$,esc,motion}=GT;
   if(window.gsap&&window.Flip) gsap.registerPlugin(Flip);
-  const CITIES=["Todas las sedes","Margarita","Caracas","Valencia"];
   const MES=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+  const MESL=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+  const SES=EVENTS.flatMap(e=>e.sessions), uniq=a=>[...new Set(a)];
+  const nSes=e=>{const v=uniq(e.sessions.map(s=>s.venue)).length;return v>1?v+" sedes":e.sessions.length+" fechas";};
+  const CITIES=["Todas las sedes",...uniq(SES.map(s=>s.city))];
+  $("#f-cat").insertAdjacentHTML("beforeend",uniq(EVENTS.map(e=>e.cat)).map(c=>`<option>${esc(c)}</option>`).join(""));
+  $("#f-date").insertAdjacentHTML("beforeend",uniq(SES.map(s=>s.date.slice(5,7))).sort().map(m=>`<option value="${m}">${MESL[+m-1][0].toUpperCase()+MESL[+m-1].slice(1)}</option>`).join(""));
   let cat="", city="";
   $("#cities").innerHTML=CITIES.map((c,i)=>`<button type="button" class="chip" aria-pressed="${i===0}">${c}</button>`).join("");
 
   // destacado + fechas de la gira
   const h=EVENTS[0], hf=evFirst(h), hm=evMin(h);
   $("#feat-ph").innerHTML=artHTML(h,"flat");
-  $("#feat-tags").innerHTML=`<span class="tag solid">Gira · ${h.sessions.length} sedes</span><span class="tag solid">${esc(h.cat)}</span>`;
-  $("#feat-t").textContent=h.title;
+  $("#feat-tags").innerHTML=`<span class="tag solid">${nSes(h)}</span><span class="tag solid">${esc(h.cat)}</span>`;
+  $("#feat-t").textContent=h.title; $("#feat-go").href="evento.html?e="+h.id;
   $("#feat-m").textContent=hf.city+" · "+hf.day+" · "+hf.start;
   $("#feat-usd").textContent="Desde "+usd(hm); $("#feat-ves").textContent=bs(toBs(hm))+" · tasa BCV";
   $("#feat-dates").innerHTML=h.sessions.map(s=>{const d=new Date(s.date+"T12:00:00"),m=GT.minPrice(s);const inner=`<span class="dtb"><b>${d.getDate()}</b><span>${MES[d.getMonth()]}</span></span><span><span class="nm">${esc(s.city)}</span><span class="muted small">${esc(s.day)} · ${esc(s.start)}</span></span><span class="st">${s.soldOut?'<span class="tag danger">Agotado</span>':`<span class="usd">${usd(m)}</span><span class="bsv">${bs(toBs(m))}</span>`}</span>`;return s.soldOut?`<div class="drow off" role="listitem">${inner}</div>`:`<a class="drow" role="listitem" href="evento.html?e=${h.id}&s=${s.id}">${inner}</a>`}).join("");
 
-  // esta semana: proximos 7 dias desde hoy (vie 9 oct 2026, fecha del prototipo)
-  const TODAY=new Date("2026-10-09T00:00:00"), LIM=new Date(TODAY.getTime()+7*86400000);
+  // esta semana: proximos 7 dias desde hoy (sáb 10 oct 2026, fecha del prototipo)
+  const TODAY=new Date("2026-10-10T00:00:00"), LIM=new Date(TODAY.getTime()+7*86400000);
   const wk=[]; EVENTS.forEach(e=>e.sessions.forEach(s=>{const d=new Date(s.date+"T12:00:00");if(d>=TODAY&&d<=LIM&&!s.soldOut)wk.push({e,s});}));
   wk.sort((a,b)=>a.s.date.localeCompare(b.s.date));
   if(wk.length){ $("#wk-sec").hidden=false; $("#wk").innerHTML=wk.map(({e,s})=>`<article class="wk">${artHTML(e)}<div class="over"><h3><a href="evento.html?e=${e.id}&s=${s.id}">${esc(e.title.split(":")[0])}</a></h3><p class="when">${esc(s.day)} · ${esc(s.city)} · ${usd(GT.minPrice(s))}</p></div></article>`).join(""); }
@@ -95,13 +100,13 @@
   function card(e){
     const f=evFirst(e), live=e.sessions.filter(s=>!s.soldOut), m=evMin(e);
     const low=live.some(s=>s.areas.some(a=>a.left>0&&a.left<=9));
-    const cities=e.sessions.map(s=>s.city).join(" · ");
+    const cities=uniq(e.sessions.map(s=>s.city)).join(" · ");
     return `<article class="ev" data-id="${e.id}">
-      ${artHTML(e,"",`<div class="tags">${e.sessions.length>1?`<span class="tag solid">${e.sessions.length} sedes</span>`:""}${low?'<span class="tag solid">Últimas entradas</span>':""}</div>`)}
+      ${artHTML(e,"",`<div class="tags">${e.sessions.length>1?`<span class="tag solid">${nSes(e)}</span>`:""}${low?'<span class="tag solid">Últimas entradas</span>':""}</div>`)}
       <div class="tx">
         <h3><a href="evento.html?e=${e.id}">${esc(e.title)}</a></h3>
         <p class="when">${e.sessions.length>1?"Desde el ":""}${esc(f.day)} · ${esc(e.sessions.length>1?cities:f.city)}</p>
-        <div class="pr"><span class="usd">${usd(m)}</span><span class="bsv">${bs(toBs(m))} · tasa BCV</span></div>
+        <div class="pr">${m==null?'<span class="tag danger" style="justify-self:start;align-self:start">Agotado</span>':`<span class="usd">${usd(m)}</span><span class="bsv">${bs(toBs(m))} · tasa BCV</span>`}</div>
       </div>
     </article>`;
   }

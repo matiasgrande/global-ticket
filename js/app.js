@@ -15,84 +15,150 @@
   const bs = (n) => "Bs " + fmt(n, 2);
   const toBs = (u) => Math.round(u * RATE * 100) / 100;
 
-  /* ---------- datos de ejemplo ---------- */
-  const A = (g, v, a, left) => [
-    { id: "gen", name: "General", note: "De pie, cerca del escenario. Entras y te mueves libre.", usd: g, left: left[0] },
-    { id: "vip", name: "VIP", note: "Zona frontal con mesa alta y barra propia.", usd: v, left: left[1] },
-    { id: "alta", name: "Terraza alta", note: "Nivel superior con vista completa. Con asiento.", usd: a, left: left[2] },
+  /* ---------- datos de ejemplo ----------
+     own: true  = evento propio de Tibisay (sede, salón y foto reales; programa, precio y aforo de ejemplo). Son los que ve el panel.
+     src        = evento REAL de otra ticketera, mostrado solo como ejemplo de catálogo (datos leídos el 10 oct 2026).
+     poster     = la imagen es un flyer con texto: se muestra completa, sin recorte. */
+  const A = (g, v, a, left, names) => [
+    { id: "gen", name: (names || [])[0] || "General", note: "De pie, cerca del escenario. Entras y te mueves libre.", usd: g, left: left[0] },
+    { id: "vip", name: (names || [])[1] || "VIP", note: "Zona frontal con mesa alta y barra propia.", usd: v, left: left[1] },
+    { id: "alta", name: (names || [])[2] || "Terraza alta", note: "Nivel superior con vista completa. Con asiento.", usd: a, left: left[2] },
   ];
+  // zonas tal como las publica la ticketera de origen: [nombre, USD, disponibles (ejemplo), nota]
+  const Z = (rows) => rows.map(([name, usd, left, note], i) => ({ id: "z" + i, name, usd, left: left == null ? 240 : left, note: note || "" }));
+  const TB = {
+    mgta: { city: "Margarita", addr: "Av. Aldonza Manrique con calle El Camarón, Playa Moreno, Nueva Esparta" },
+    mcbo: { city: "Maracaibo", addr: "Av. El Milagro, sector Don Bosco, Maracaibo, Zulia" },
+    mat: { city: "Maturín", addr: "Av. Bella Vista, km 3, vía La Cruz, Maturín, Monagas" },
+    mer: { city: "Mérida", addr: "Av. Universidad, sector Milla, Mérida" },
+  };
+  const tb = (k, venue, rest) => Object.assign({ id: k, city: TB[k].city, venue: "Tibisay " + TB[k].city + " · " + venue, addr: TB[k].addr }, rest);
   const EVENTS = [
     {
-      id: "cacho", cat: "Comedia", art: "cacho", artText: "Ya casi llego", title: "Cacho Zapata: Ya Casi Llego",
-      tag: "Gira de comedia", age: "+16", refund: "full",
-      desc: "Cacho Zapata (artista de ejemplo) vuelve con su show nuevo: la cola del banco, el cuñado con el WhatsApp y el apagón en pleno cumpleaños. Dos horas, sin intermedios largos.",
+      id: "gala", own: true, pos: "50% 82%", cat: "Fiestas y galas", title: "Gran Gala de Fin de Año",
+      tag: "Tres hoteles, una noche", age: "Todo público", refund: "full",
+      desc: "Despide el año en un hotel Tibisay: cena de varios tiempos, orquesta en vivo, brindis a medianoche y pista hasta tarde. Elige Margarita frente al mar, Maracaibo en el Salón Bolívar o Maturín en el Gran Salón Morichal Largo. Menú y artistas de ejemplo.",
       sessions: [
-        { id: "mgta", city: "Margarita", venue: "Tibisay Margarita · Sala Costa Azul", addr: "Av. Costa Azul, Pampatar (dirección de ejemplo)", date: "2026-11-13", day: "vie 13 nov", doors: "7:00 pm", start: "8:30 pm", areas: A(15, 35, 25, [212, 18, 0]), hotel: 68 },
-        { id: "ccs", city: "Caracas", venue: "Tibisay Caracas · Salón Ávila", addr: "Av. Francisco de Miranda, Chacao (dirección de ejemplo)", date: "2026-11-21", day: "sáb 21 nov", doors: "6:30 pm", start: "8:00 pm", areas: A(18, 40, 28, [301, 9, 110]), hotel: 74 },
-        { id: "vlc", city: "Valencia", venue: "Tibisay Valencia · Sala Los Samanes", addr: "Av. Bolívar Norte (dirección de ejemplo)", date: "2026-12-04", day: "vie 4 dic", doors: "7:00 pm", start: "8:30 pm", areas: A(15, 35, 25, [0, 0, 0]), hotel: 62, soldOut: true },
-      ],
+        tb("mgta", "Salón Nueva Esparta y Terraza Downtown Beach", { date: "2026-12-31", day: "jue 31 dic", doors: "8:00 pm", start: "9:00 pm", hotel: 162, areas: A(85, 160, 120, [118, 9, 34], ["Salón general", "Mesa VIP", "Terraza frente al mar"]) }),
+        tb("mcbo", "Salón Bolívar", { date: "2026-12-31", day: "jue 31 dic", doors: "8:00 pm", start: "9:00 pm", hotel: 95, areas: A(70, 140, 95, [420, 31, 60], ["Salón general", "Mesa VIP", "Mesa preferencial"]) }),
+        tb("mat", "Gran Salón Morichal Largo", { date: "2026-12-31", day: "jue 31 dic", doors: "8:00 pm", start: "9:00 pm", hotel: 80, areas: A(60, 120, 80, [260, 14, 48], ["Salón general", "Mesa VIP", "Mesa preferencial"]) }),
+      ].map((s) => Object.assign(s, { areas: s.areas.map((a, i) => Object.assign(a, { note: ["Cena, orquesta y brindis. Mesa compartida.", "Mesa cercana a la pista y botella de espumante por mesa (ejemplo).", "Mesa con mejor vista, cena incluida (ejemplo)."][i] })) })),
     },
     {
-      id: "gala", cat: "Fiestas y galas", art: "gala", artText: "31 dic", title: "Gran Gala de Fin de Año",
-      tag: "Evento Tibisay", age: "+18", refund: "full",
-      desc: "Cena de cuatro tiempos, orquesta en vivo, brindis a medianoche y fuegos sobre la bahía (programa de ejemplo, por confirmar). Código de vestimenta: elegante. Las mesas se asignan por área al llegar.",
+      id: "salsa", own: true, cat: "Música en vivo", title: "Salsa al Atardecer en Downtown Beach",
+      tag: "Frente al mar", age: "+18", refund: "weather",
+      desc: "Orquesta de salsa en vivo en la Terraza Downtown Beach, el club de playa del Tibisay Margarita. Empieza con el sol cayendo sobre Playa Moreno y sigue con DJ hasta la medianoche. Orquesta por anunciar (ejemplo).",
       sessions: [
-        { id: "mgta", city: "Margarita", venue: "Tibisay Margarita · Salón Caribe", addr: "Av. Costa Azul, Pampatar (dirección de ejemplo)", date: "2026-12-31", day: "jue 31 dic", doors: "8:00 pm", start: "9:00 pm", areas: [
-          { id: "gen", name: "Salón general", note: "Cena, orquesta y brindis. Mesa compartida.", usd: 85, left: 140 },
-          { id: "vip", name: "Mesa VIP", note: "Mesa cercana a la pista y botella de espumante por mesa (ejemplo).", usd: 160, left: 22 },
-          { id: "alta", name: "Terraza de la bahía", note: "Mesa en terraza con vista a los fuegos (ejemplo).", usd: 120, left: 41 },
-        ], hotel: 140 },
-      ],
-    },
-    {
-      id: "brisa", cat: "Música en vivo", art: "brisa", artText: "Salsa en la playa", title: "Brisa Mayor: Salsa en la Playa",
-      tag: "Al aire libre", age: "Todo público", refund: "weather",
-      desc: "La Orquesta Brisa Mayor (agrupación de ejemplo) toca en la arena al atardecer. Trae protector solar y agua; hay barra y comida en el lugar.",
-      sessions: [
-        { id: "mgta", city: "Margarita", venue: "Tibisay Margarita · Playa del Hotel", addr: "Playa El Agua (dirección de ejemplo)", date: "2026-10-10", day: "sáb 10 oct", doors: "4:00 pm", start: "5:30 pm", areas: [
+        tb("mgta", "Terraza Downtown Beach", { date: "2026-10-17", day: "sáb 17 oct", doors: "4:00 pm", start: "5:30 pm", hotel: 162, areas: [
           { id: "gen", name: "Arena", note: "General sobre la arena, de pie o con tu toalla.", usd: 12, left: 380 },
-          { id: "vip", name: "Palco de playa", note: "Sombrilla, silla y mesa baja frente a la tarima.", usd: 45, left: 6 },
+          { id: "vip", name: "Palapa", note: "Palapa con tumbonas y mesa baja frente a la tarima (hasta 4 personas).", usd: 45, left: 6 },
           { id: "alta", name: "Terraza", note: "Nivel alto con sombra y asiento.", usd: 22, left: 52 },
-        ], hotel: 68 },
+        ] }),
       ],
     },
     {
-      id: "fuego", cat: "Conciertos", art: "fuego", artText: "Fuego Alto", title: "Fuego Alto en Concierto",
-      tag: "Concierto", age: "+14", refund: "full",
-      desc: "La banda de rock Fuego Alto (de ejemplo) presenta su disco «Cielo Bajo» con luces, pantalla gigante y todas las canciones que te sabes.",
+      id: "bolero", own: true, cat: "Música en vivo", title: "Noches de Bolero",
+      tag: "Ciclo en los salones Tibisay", age: "+18", refund: "full",
+      desc: "Un trío de boleros y una voz invitada recorren los salones Tibisay: cena ligera, coctelería y dos sets de clásicos. Mismo show en tres ciudades, aforo pequeño. Artistas por anunciar (ejemplo).",
       sessions: [
-        { id: "vlc", city: "Valencia", venue: "Anfiteatro Tibisay Valencia", addr: "Av. Bolívar Norte (dirección de ejemplo)", date: "2026-11-28", day: "sáb 28 nov", doors: "5:00 pm", start: "7:30 pm", areas: [
-          { id: "gen", name: "General", note: "De pie frente al escenario.", usd: 20, left: 1250 },
-          { id: "vip", name: "VIP", note: "Zona cercana con acceso rápido y baño exclusivo.", usd: 55, left: 140 },
-          { id: "alta", name: "Gradas altas", note: "Niveles superiores con asiento numerado por fila libre.", usd: 30, left: 420 },
-        ], hotel: 62 },
+        tb("mer", "Salón Sierra Nevada", { date: "2026-10-24", day: "sáb 24 oct", doors: "7:30 pm", start: "8:30 pm", hotel: 85, areas: A(25, 55, 35, [96, 8, 30], ["General", "Mesa frontal", "Barra alta"]) }),
+        tb("mcbo", "Salón Urdaneta", { date: "2026-11-13", day: "vie 13 nov", doors: "7:30 pm", start: "8:30 pm", hotel: 95, areas: A(25, 55, 35, [64, 11, 20], ["General", "Mesa frontal", "Barra alta"]) }),
+        tb("mat", "Salón Monagas", { date: "2026-11-21", day: "sáb 21 nov", doors: "7:30 pm", start: "8:30 pm", hotel: 80, soldOut: true, areas: A(25, 55, 35, [0, 0, 0], ["General", "Mesa frontal", "Barra alta"]) }),
+      ].map((s) => Object.assign(s, { areas: s.areas.map((a, i) => Object.assign(a, { note: ["Sillas sin numerar, primero en llegar, primero en elegir.", "Mesa para dos o cuatro frente a la tarima, con una botella por mesa (ejemplo).", "Taburetes junto a la barra, con vista a la tarima."][i] })) })),
+    },
+    {
+      id: "fullday", own: true, cat: "Experiencias", title: "Full Day en el Lago",
+      tag: "Piscina, playa y gastronomía", age: "Todo público", refund: "weather",
+      desc: "Un día completo en el Tibisay Hotel del Lago: piscina, playa del lago con palapas, almuerzo zuliano y coctelería. Llegas en la mañana y te vas al atardecer, sin hospedarte. Precios y menú de ejemplo.",
+      sessions: [
+        tb("mcbo", "Piscina y playa del lago", { date: "2026-11-08", day: "dom 8 nov", doors: "9:00 am", start: "9:00 am", hotel: 95, areas: A(35, 120, 55, [140, 7, 60], ["Full Day", "Palapa privada", "Full Day con almuerzo"]) }),
+      ].map((s) => Object.assign(s, { areas: s.areas.map((a, i) => Object.assign(a, { note: ["Piscina, playa del lago y tumbona por orden de llegada.", "Palapa para hasta 6 personas, con servicio de mesonero.", "Incluye almuerzo zuliano y una bebida."][i] })) })),
+    },
+    {
+      id: "akapellah", poster: true, cat: "Conciertos", title: "Akapellah: La Cruz Tour",
+      tag: "Gira nacional", age: "Todo público", refund: "ext", src: { name: "Ticketmundo", url: "https://akapellah.ticketmundo.com.ve/" },
+      desc: "Akapellah, uno de los raperos más respetados del país, lleva su gira La Cruz a tres ciudades. Menores de 18 entran con representante y no se admiten menores de 3 años.",
+      sessions: [
+        { id: "mcy", city: "Maracay", venue: "Concha Acústica de Maracay", addr: "Maracay, Aragua", date: "2026-11-28", day: "sáb 28 nov", doors: "", start: "9:00 pm", areas: Z([["General B", 15.02], ["General A", 20.29], ["VIP", 29.76], ["Palco A", 70.35], ["Palco B", 70.35]]) },
+        { id: "bqto", city: "Barquisimeto", venue: "Hotel Jirahara", addr: "Barquisimeto, Lara", date: "2026-12-03", day: "jue 3 dic", doors: "", start: "9:00 pm", areas: Z([["General", 17.86, null, "Precio de ejemplo: la zona de Barquisimeto no se pudo leer en la fuente."], ["VIP", 29.76], ["Palco", 70.35]]) },
+        { id: "mcbo", city: "Maracaibo", venue: "Mi Ternerita", addr: "Maracaibo, Zulia", date: "2026-12-05", day: "sáb 5 dic", doors: "", start: "9:00 pm", hotel: 95, areas: Z([["General", 17.86], ["VIP", 29.76], ["Palco A", 70.35], ["Palco B", 70.35]]) },
       ],
     },
     {
-      id: "mic", cat: "Comedia", art: "mic", artText: "Micrófono abierto", title: "Noche de Micrófono Abierto",
-      tag: "Cada mes", age: "+18", refund: "full",
-      desc: "Ocho cómicos nuevos, cinco minutos cada uno y un público que decide quién vuelve. Cupo pequeño, ambiente cercano.",
+      id: "silvestre", poster: true, cat: "Conciertos", title: "Silvestre Dangond: El Baile de Todos",
+      tag: "Vallenato en el estadio", age: "Por confirmar", refund: "ext", src: { name: "Tiquemax", url: "https://www.tiquemax.com/evento/silvestre-dangond-merida" },
+      desc: "Silvestre Dangond trae su gira El Baile de Todos al Estadio Metropolitano de Mérida: una noche de vallenato masivo con once zonas, desde la norte alta hasta invitados especiales.",
       sessions: [
-        { id: "ccs", city: "Caracas", venue: "Tibisay Caracas · Sótano Ávila", addr: "Av. Francisco de Miranda, Chacao (dirección de ejemplo)", date: "2026-10-15", day: "jue 15 oct", doors: "7:30 pm", start: "8:30 pm", areas: [
-          { id: "gen", name: "General", note: "Sillas sin numerar, primero en llegar, primero en elegir.", usd: 8, left: 70 },
-          { id: "vip", name: "Mesa frontal", note: "Mesa para dos o cuatro, frente al escenario.", usd: 14, left: 12 },
-          { id: "alta", name: "Barra alta", note: "Taburetes con vista al escenario.", usd: 10, left: 20 },
-        ], hotel: 74 },
-        { id: "vlc", city: "Valencia", venue: "Tibisay Valencia · Sala Los Samanes", addr: "Av. Bolívar Norte (dirección de ejemplo)", date: "2026-11-19", day: "jue 19 nov", doors: "7:30 pm", start: "8:30 pm", areas: [
-          { id: "gen", name: "General", note: "Sillas sin numerar.", usd: 8, left: 54 },
-          { id: "vip", name: "Mesa frontal", note: "Mesa para dos o cuatro.", usd: 14, left: 10 },
-          { id: "alta", name: "Barra alta", note: "Taburetes con vista al escenario.", usd: 10, left: 16 },
-        ], hotel: 62 },
+        { id: "mer", city: "Mérida", venue: "Estadio Metropolitano de Mérida", addr: "Mérida", date: "2026-11-21", day: "sáb 21 nov", doors: "5:00 pm", start: "9:00 pm", hotel: 85, areas: Z([["Norte Alta", 25], ["Norte Baja", 30], ["Tribuna Alta", 35.01], ["Tribuna Baja", 45], ["Bronce", 65], ["Plata", 94.99], ["Oro", 115], ["Diamante", 159.99], ["Alfombra Roja", 175], ["Primera Clase", 305], ["Invitados Especiales", 1000, 12]]) },
+      ],
+    },
+    {
+      id: "carluis", poster: true, cat: "Comedia", title: "Carluis Medina: Oxitocina",
+      tag: "Gira de stand-up", age: "+16", refund: "ext", src: { name: "Ticketmundo", url: "https://ticketsve.ticketmundo.com.ve/event/3248" },
+      desc: "Carluis Medina presenta Oxitocina, su show de stand-up, en los teatros clásicos de Maracaibo y Valencia. Precios publicados en bolívares, aquí convertidos a dólares.",
+      sessions: [
+        { id: "mcbo", city: "Maracaibo", venue: "Teatro Baralt · Gran Sala", addr: "Centro de Maracaibo, Zulia", date: "2026-12-08", day: "mar 8 dic", doors: "8:30 pm", start: "9:30 pm", hotel: 95, areas: Z([["Palco II", 10], ["Palco I", 20], ["Platea General", 25], ["Platea VIP", 30]]) },
+        { id: "vlc", city: "Valencia", venue: "Teatro Municipal de Valencia", addr: "Centro de Valencia, Carabobo", date: "2026-12-09", day: "mié 9 dic", doors: "7:00 pm", start: "8:00 pm", areas: Z([["Balcón Promo", 10], ["Segundo Balcón", 20], ["Primer Balcón", 25], ["Luneta", 30], ["Patio", 30]]) },
+      ],
+    },
+    {
+      id: "caibo", poster: true, cat: "Conciertos", title: "Caibo: La Del Sol Amada",
+      tag: "El regreso", age: "Todo público", refund: "ext", src: { name: "Ticketmundo", url: "https://ticketsve.ticketmundo.com.ve/event/3240" },
+      desc: "El dúo Caibo vuelve a un escenario después de ocho años separados, con sus clásicos y el sencillo nuevo, Tambora. Menores entran con representante.",
+      sessions: [
+        { id: "ccs", city: "Caracas", venue: "Anfiteatro El Hatillo", addr: "El Hatillo, Miranda", date: "2026-10-15", day: "jue 15 oct", doors: "7:00 pm", start: "8:00 pm", areas: Z([["General Lateral", 34.4], ["General Central", 49], ["Preferencial Lateral", 56.7], ["Preferencial Central", 60.9], ["VIP", 77], ["SVIP", 97.3]]) },
+      ],
+    },
+    {
+      id: "yordano", poster: true, cat: "Conciertos", title: "Yordano: Ida y Vuelta",
+      tag: "Gira", age: "Por confirmar", refund: "ext", src: { name: "goliiive", url: "https://www.goliiive.com/barquisimeto-yordano-tour-ida-y-vuelta" },
+      desc: "Yordano vuelve a Barquisimeto con su banda dentro de la gira Ida y Vuelta. Precios publicados en bolívares, aquí convertidos a dólares.",
+      sessions: [
+        { id: "bqto", city: "Barquisimeto", venue: "Trinitarias Suites · Sala Ríos Reyna", addr: "Barquisimeto, Lara", date: "2026-10-15", day: "jue 15 oct", doors: "7:00 pm", start: "hora por confirmar", areas: Z([["General", 65.01], ["VIP", 86.68]]) },
+      ],
+    },
+    {
+      id: "caramelos", poster: true, cat: "Conciertos", title: "Caramelos de Cianuro",
+      tag: "Nueva fecha", age: "+16", refund: "ext", src: { name: "goliiive", url: "https://www.goliiive.com/caramelos-de-cianuro-maracaibo-nueva-fecha" },
+      desc: "Caramelos de Cianuro reprograma su concierto en el Palacio de Eventos de Maracaibo. Menores de 16 con representante. Precios publicados en bolívares, aquí convertidos a dólares.",
+      sessions: [
+        { id: "mcbo", city: "Maracaibo", venue: "Palacio de Eventos de Venezuela", addr: "Maracaibo, Zulia", date: "2026-11-20", day: "vie 20 nov", doors: "7:00 pm", start: "hora por confirmar", hotel: 95, areas: Z([["Palco General", 27.09], ["Zona General", 48.76], ["Zona Fans", 70.43], ["Platea", 86.68], ["VIP", 102.93]]) },
+      ],
+    },
+    {
+      id: "gemelos", poster: true, cat: "Comedia", title: "Gemelos",
+      tag: "Stand-up e improvisación", age: "+16", refund: "ext", src: { name: "goliiive", url: "https://www.goliiive.com/gemelos-caracas" },
+      desc: "Samuel Rodríguez y Manuel Silva mezclan stand-up, improvisación y personajes en hora y media de show con el público.",
+      sessions: [
+        { id: "ccs", city: "Caracas", venue: "Centro Cultural Chacao", addr: "Chacao, Caracas", date: "2026-12-03", day: "jue 3 dic", doors: "", start: "8:00 pm", areas: Z([["Balcón Lateral 8", 18], ["Balcón Lateral 9", 22], ["Balcón Central", 25], ["Platea Lateral 4", 30], ["Platea Superior Central", 32], ["Platea Lateral 1 y 3", 35], ["Platea Central", 40]]) },
+      ],
+    },
+    {
+      id: "cusica", poster: true, cat: "Festivales", title: "Cusica Fest 2026",
+      tag: "Dos días en la USB", age: "Por confirmar", refund: "ext", src: { name: "Ticketmundo", url: "https://cusicafest2026.ticketmundo.com.ve/" },
+      desc: "Dos días de música, arte y gastronomía en la Universidad Simón Bolívar, con Diplo, Sebastián Yatra, Lasso, Cultura Profética, Los Amigos Invisibles y más. Entrada por día.",
+      sessions: [
+        { id: "d1", city: "Caracas", venue: "Universidad Simón Bolívar", addr: "Sartenejas, Baruta, Miranda", date: "2026-12-04", day: "vie 4 dic", doors: "", start: "12:00 pm", areas: Z([["General", 65], ["VIP", 110]]) },
+        { id: "d2", city: "Caracas", venue: "Universidad Simón Bolívar", addr: "Sartenejas, Baruta, Miranda", date: "2026-12-05", day: "sáb 5 dic", doors: "", start: "12:00 pm", areas: Z([["General", 65], ["VIP", 110]]) },
+      ],
+    },
+    {
+      id: "morat", poster: true, cat: "Conciertos", title: "Morat: Ya Es Mañana",
+      tag: "World Tour", age: "Por confirmar", refund: "ext", src: { name: "Ticketmundo", url: "https://moratenvenezuela.ticketmundo.com.ve/" },
+      desc: "Morat llega a Caracas con dos noches de su gira Ya Es Mañana. General y VIP están agotadas en las dos fechas.",
+      sessions: [
+        { id: "d1", city: "Caracas", venue: "Universidad Simón Bolívar", addr: "Sartenejas, Baruta, Miranda", date: "2026-12-12", day: "sáb 12 dic", doors: "", start: "hora por confirmar", soldOut: true, areas: Z([["General", 50, 0], ["VIP", 100, 0]]) },
+        { id: "d2", city: "Caracas", venue: "Universidad Simón Bolívar", addr: "Sartenejas, Baruta, Miranda", date: "2026-12-13", day: "dom 13 dic", doors: "", start: "hora por confirmar", soldOut: true, areas: Z([["General", 50, 0], ["VIP", 100, 0]]) },
       ],
     },
   ];
   const REFUND = {
     full: "Si el evento se cancela, te devolvemos el 100% en la misma moneda y a la misma tasa de tu compra. Si cambia de fecha, puedes pedir reembolso o conservar tu entrada. Plazo: 5 días hábiles desde que lo pides. (Política de ejemplo: la definitiva está por definir.)",
+    ext: "Evento real de otro organizador, mostrado aquí solo como ejemplo de catálogo. La política de reembolso que vale es la de su ticketera oficial.",
     weather: "Si el evento se cancela o se suspende por lluvia, te devolvemos el 100% en la misma moneda y a la misma tasa de tu compra. Si no puedes asistir, no hay devolución, pero puedes transferir tu entrada. (Política de ejemplo: la definitiva está por definir.)",
   };
-  const MONTHS = { 11: "noviembre", 12: "diciembre" };
   const minPrice = (s) => { const a = s.areas.filter((x) => x.left > 0).map((x) => x.usd); return a.length ? Math.min(...a) : null; };
-  const evMin = (e) => Math.min(...e.sessions.filter((s) => !s.soldOut).map(minPrice));
+  const evMin = (e) => { const p = e.sessions.filter((s) => !s.soldOut).map(minPrice).filter((x) => x != null); return p.length ? Math.min(...p) : null; };
   const evFirst = (e) => e.sessions.slice().sort((a, b) => a.date.localeCompare(b.date))[0];
   const getEvent = (id) => EVENTS.find((e) => e.id === id) || EVENTS[0];
 
@@ -106,7 +172,7 @@
   };
   function currentOrder() {
     const o = store.get();
-    const ev = getEvent(o.eventId || "cacho");
+    const ev = getEvent(o.eventId);
     const ses = ev.sessions.find((s) => s.id === o.sessionId) || ev.sessions.find((s) => !s.soldOut);
     const qty = o.qty || {};
     const lines = ses.areas.filter((a) => qty[a.id] > 0).map((a) => ({ id: a.id, name: a.name, n: qty[a.id], unit: a.usd, sub: a.usd * qty[a.id] }));
@@ -139,8 +205,10 @@
   }
 
   function artHTML(e, cls, inner) {
-    // FOTO REAL: img/eventos/<id>.jpg (4:5, 1080x1350). Si no existe, queda la superficie y el rotulo "Foto del evento".
-    return `<div class="ph ${cls || ""}" aria-hidden="true"><img src="img/eventos/${e.id}.jpg" alt="" loading="lazy" decoding="async" onerror="this.parentNode.classList.add('nofoto');this.remove()"><span class="ph-l">Foto del evento</span>${inner || ""}</div>`;
+    // img/eventos/<id>.jpg. Flyer (poster): se ve entero sobre una copia desenfocada que llena el marco; foto: recorte cover.
+    const src = `img/eventos/${e.id}.jpg`;
+    const bg = e.poster ? `<img class="bg" src="${src}" alt="" loading="lazy" decoding="async">` : "";
+    return `<div class="ph ${e.poster ? "poster " : ""}${cls || ""}" aria-hidden="true">${bg}<img src="${src}" alt=""${e.pos ? ` style="object-position:${e.pos}"` : ""} loading="lazy" decoding="async" onerror="this.parentNode.classList.add('nofoto');this.remove()"><span class="ph-l">Foto del evento</span>${inner || ""}</div>`;
   }
 
   const LOGO = `<svg viewBox="0 0 28 28" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M6 6h16a3 3 0 0 1 3 3v2.2a2.8 2.8 0 0 0 0 5.6V19a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3v-2.8a2.8 2.8 0 0 0 0-5.6V9a3 3 0 0 1 3-3zm9 4v2h2v-2h-2zm0 4v3h2v-3h-2z"/></svg>`;
@@ -225,6 +293,6 @@
     }));
   }
 
-  window.GT = { TAXLINE, countTo, waitlistForm, bindWaitlist, RATE, P2P_REF, fmt, usd, bs, toBs, EVENTS, REFUND, MONTHS, minPrice, evMin, evFirst, getEvent, store, currentOrder, $, $$, esc, motion, toast, artHTML, startTimer, qrSVG, LOGO };
+  window.GT = { TAXLINE, countTo, waitlistForm, bindWaitlist, RATE, P2P_REF, fmt, usd, bs, toBs, EVENTS, REFUND, minPrice, evMin, evFirst, getEvent, store, currentOrder, $, $$, esc, motion, toast, artHTML, startTimer, qrSVG, LOGO };
   document.addEventListener("DOMContentLoaded", chrome);
 })();

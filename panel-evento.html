@@ -21,10 +21,10 @@
   <section class="card" aria-labelledby="h1">
     <h2 id="h1">Datos del evento</h2>
     <div class="fgrid c2">
-      <div class="field"><label for="n">Nombre del evento</label><input id="n" value="Cacho Zapata: Ya Casi Llego"><span class="err" id="e-n" role="alert">El evento necesita un nombre.</span></div>
-      <div class="field"><label for="c">Categoría</label><select id="c"><option>Conciertos</option><option>Fiestas y galas</option><option selected>Comedia</option><option>Música en vivo</option></select></div>
+      <div class="field"><label for="n">Nombre del evento</label><input id="n" value="Noches de Bolero"><span class="err" id="e-n" role="alert">El evento necesita un nombre.</span></div>
+      <div class="field"><label for="c">Categoría</label><select id="c"><option>Conciertos</option><option>Fiestas y galas</option><option>Comedia</option><option selected>Música en vivo</option><option>Experiencias</option></select></div>
     </div>
-    <div class="field"><label for="d">Descripción (la ves en la ficha)</label><textarea id="d">Cacho Zapata (artista de ejemplo) vuelve con su show nuevo. Dos horas de comedia.</textarea></div>
+    <div class="field"><label for="d">Descripción (la ves en la ficha)</label><textarea id="d">Un trío de boleros y una voz invitada recorren los salones Tibisay: cena ligera, coctelería y dos sets de clásicos. Artistas por anunciar (ejemplo).</textarea></div>
     <div class="fgrid c3">
       <div class="field"><label for="a">Edad mínima</label><select id="a"><option>Todo público</option><option>+14</option><option>+16</option><option selected>+18</option></select></div>
       <div class="field"><label for="r">Política de reembolso</label><select id="r"><option selected>Cancelación: 100% en misma moneda y tasa (ejemplo)</option><option>Cancelación o lluvia: 100% en misma moneda y tasa (ejemplo)</option></select><span class="hint">Se muestra al comprador antes de pagar.</span></div>
@@ -51,10 +51,10 @@
 <script>
 (function(){
   const {usd,bs,toBs,fmt,RATE,$,$$,esc,motion,toast}=GT;
-  const CITIES=["Margarita","Caracas","Valencia"];
+  const CITIES=["Margarita","Maracaibo","Maturín","Mérida"];
   const SEDE0=[
-    {city:"Margarita",venue:"Tibisay Margarita · Sala Costa Azul",date:"2026-11-13",doors:"19:00",start:"20:30",areas:[["General",380,15],["VIP",60,35],["Terraza alta",120,25]]},
-    {city:"Caracas",venue:"Tibisay Caracas · Salón Ávila",date:"2026-11-21",doors:"18:30",start:"20:00",areas:[["General",380,18],["VIP",60,40],["Terraza alta",120,28]]},
+    {city:"Mérida",venue:"Tibisay Mérida · Salón Sierra Nevada",date:"2026-10-24",doors:"19:30",start:"20:30",areas:[["General",110,25],["Mesa frontal",20,55],["Barra alta",40,35]]},
+    {city:"Maracaibo",venue:"Tibisay Maracaibo · Salón Urdaneta",date:"2026-11-13",doors:"19:30",start:"20:30",areas:[["General",90,25],["Mesa frontal",20,55],["Barra alta",30,35]]},
   ];
   let uid=0;
   function areaRow(a){const i=++uid;return `<div class="arow" data-row><div class="field full"><label for="an${i}">Área</label><input id="an${i}" value="${esc(a[0])}" data-k="name"></div><div class="field"><label for="ac${i}">Aforo</label><input id="ac${i}" type="number" min="0" inputmode="numeric" value="${a[1]}" data-k="cap"></div><div class="field"><label for="ap${i}">Precio (USD)</label><input id="ap${i}" type="number" min="0" step="0.5" inputmode="decimal" value="${a[2]}" data-k="usd"></div><p class="bsout" data-bs></p><button class="btn sec rm" type="button" data-rm-area aria-label="Quitar esta área">Quitar</button></div>`;}
@@ -73,7 +73,7 @@
     $("#tot").innerHTML=`<span>Sedes: <b>${$$("[data-sede]").length}</b></span><span>Aforo total: <b>${fmt(cap,0)}</b></span><span>Ingreso si se vende todo: <b>${usd(pot)}</b> (≈ ${bs(toBs(pot))} a tasa BCV ${fmt(RATE,2)}, ejemplo)</span>`;
   }
   $("#sedes").innerHTML=SEDE0.map((s,i)=>sedeCard(s,i+1)).join("");
-  $("#add-sede").onclick=()=>{$("#sedes").insertAdjacentHTML("beforeend",sedeCard({city:"Valencia",venue:"",date:"",doors:"19:00",start:"20:30",areas:[["General",0,0]]},0));renumber();calc();const l=$("#sedes").lastElementChild;l.querySelector("select").focus();motion(g=>g.from(l,{autoAlpha:0,y:16,duration:.4,ease:"power3.out"}));};
+  $("#add-sede").onclick=()=>{$("#sedes").insertAdjacentHTML("beforeend",sedeCard({city:"Maturín",venue:"",date:"",doors:"19:00",start:"20:30",areas:[["General",0,0]]},0));renumber();calc();const l=$("#sedes").lastElementChild;l.querySelector("select").focus();motion(g=>g.from(l,{autoAlpha:0,y:16,duration:.4,ease:"power3.out"}));};
   $("#sedes").addEventListener("click",e=>{
     const ra=e.target.closest("[data-rm-area]"),rs=e.target.closest("[data-rm-sede]"),aa=e.target.closest("[data-add-area]");
     if(aa){const box=aa.closest("[data-sede]").querySelector("[data-areas]");box.insertAdjacentHTML("beforeend",areaRow(["",0,0]));box.lastElementChild.querySelector("input").focus();calc();}

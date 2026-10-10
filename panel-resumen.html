@@ -44,13 +44,15 @@
 <script>
 (function(){
   const {EVENTS,usd,fmt,$,$$,esc,motion,RATE,P2P_REF,toast}=GT;
-  const CAPS={cacho:[380,60,120],gala:[200,30,60],brisa:[500,40,80],fuego:[1500,200,500],mic:[80,16,24]};
+  // aforos de ejemplo por evento propio, dentro de la capacidad publicada de cada salón
+  const CAPS={gala:[600,40,80],salsa:[500,24,120],bolero:[140,20,40],fullday:[300,12,120]};
+  const OWN=EVENTS.filter(e=>e.own);
   const ALL=[];
-  EVENTS.forEach(e=>e.sessions.forEach(s=>{
+  OWN.forEach(e=>e.sessions.forEach(s=>{
     const areas=s.areas.map((a,i)=>{const cap=CAPS[e.id][i];const sold=s.soldOut?cap:cap-a.left;return {n:["General","VIP","Niveles superiores"][i],cap,sold,rev:sold*a.usd};});
     ALL.push({e,s,areas,cap:areas.reduce((t,a)=>t+a.cap,0),sold:areas.reduce((t,a)=>t+a.sold,0),rev:areas.reduce((t,a)=>t+a.rev,0)});
   }));
-  $("#fe").insertAdjacentHTML("beforeend",EVENTS.map(e=>`<option value="${e.id}">${esc(e.title)}</option>`).join(""));
+  $("#fe").insertAdjacentHTML("beforeend",OWN.map(e=>`<option value="${e.id}">${esc(e.title)}</option>`).join(""));
   $("#p2p").textContent=fmt(P2P_REF,2); $("#bcv").textContent=fmt(RATE,2);
   const METH=[["Pago Móvil",.38,"c-pm","Automática (banco)"],["Tarjeta",.27,"c-tj","Automática (pasarela)"],["Zelle",.22,"c-zl","Manual: cola de verificación"],["USDT (Binance)",.13,"c-us","Manual: cola de verificación"]];
   function render(){
