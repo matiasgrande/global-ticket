@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="es-VE">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>Global Ticket · Entradas con el precio completo</title>
+<meta name="description" content="Entradas para conciertos, galas, comedia y música en vivo en Venezuela. Precio en dólares y bolívares a tasa BCV.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 28 28%27%3E%3Crect width=%2728%27 height=%2728%27 rx=%276%27 fill=%27%233B5BFF%27/%3E%3Cpath d=%27M7 9h14v3a2 2 0 0 0 0 4v3H7v-3a2 2 0 0 0 0-4z%27 fill=%27white%27/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-nav="index.html">
+<main id="main">
+  <div class="wrap">
+    <section class="feat" id="feat" aria-label="Destacado: gira de comedia">
+      <div class="feat-hero">
+        <div id="feat-ph"></div>
+        <div class="over">
+          <div class="tags" id="feat-tags"></div>
+          <h1 id="feat-t"></h1>
+          <p class="meta" id="feat-m"></p>
+          <div class="buy">
+            <div><span class="price" id="feat-usd"></span><br><span class="bsv small" id="feat-ves"></span></div>
+            <a class="btn" id="feat-go" href="evento.html?e=cacho">Comprar entradas</a>
+          </div>
+        </div>
+      </div>
+      <div class="feat-dates" id="feat-dates" role="list" aria-label="Fechas de la gira"></div>
+    </section>
+
+    <section class="filters" aria-label="Filtrar eventos">
+      <div role="group" aria-label="Ciudad o sede"><div class="chips" id="cities"></div></div>
+    </section>
+
+    <section id="wk-sec" aria-labelledby="h-wk" hidden>
+      <div class="sec-h"><h2 id="h-wk">Esta semana</h2></div>
+      <div class="wk-row" id="wk"></div>
+    </section>
+
+    <div class="sec-h"><h2>Todos los eventos</h2></div>
+    <div class="sel2">
+      <div class="field"><label class="sr" for="f-cat">Categoría</label>
+        <select id="f-cat"><option value="">Categorías</option><option>Conciertos</option><option>Fiestas y galas</option><option>Comedia</option><option>Música en vivo</option></select></div>
+      <div class="field"><label class="sr" for="f-date">Fecha</label>
+        <select id="f-date"><option value="">Cualquier fecha</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select></div>
+    </div>
+    <p class="muted small" id="count" aria-live="polite" style="margin:0 0 14px"></p>
+    <div class="grid-ev" id="grid"></div>
+    <div class="empty" id="empty" hidden><h3>Nada con esos filtros</h3><p class="muted" style="margin:8px 0 16px">Prueba con otra ciudad o quita la fecha.</p><button class="btn sec" id="reset" type="button">Ver todos los eventos</button></div>
+
+    <section class="pay-sec" aria-labelledby="h-pay">
+      <h2 id="h-pay">Cómo pagar</h2>
+      <p class="pay-note" style="margin-top:6px">Mismo precio, tú eliges cómo pagarlo. Compras con tu correo y tu WhatsApp, sin cuenta ni app.</p>
+      <ul class="pay-list">
+        <li><span><b>Pago Móvil</b><span class="muted small">Pagas en Bs a tasa BCV</span></span><span class="t">Al instante</span></li>
+        <li><span><b>Tarjeta</b><span class="muted small">Pagas en Bs a tasa BCV</span></span><span class="t">Al instante</span></li>
+        <li><span><b>Zelle</b><span class="muted small">Pagas en USD, con comprobante</span></span><span class="t">Hasta 24 h <span class="muted small">(plazo de ejemplo)</span></span></li>
+        <li><span><b>USDT (Binance)</b><span class="muted small">Pagas en USDT, con comprobante</span></span><span class="t">Hasta 24 h <span class="muted small">(plazo de ejemplo)</span></span></li>
+      </ul>
+      <p class="pay-note">Impuestos (IVA/IGTF): por definir.</p>
+    </section>
+  </div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" integrity="sha384-HOvlOYPIs/zjoIkWUGXkVmXsjr8GuZLV+Q+rcPwmJOVZVpvTSXQChiN4t9Euv9Vc" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/Flip.min.js" integrity="sha384-lg3+EgIwmxYq9YD4ix279pdUEasqmOS17fF+2mI/NEg6JHkawYaWYpJ6nKZenPOy" crossorigin="anonymous"></script>
+<script src="js/app.js"></script>
+<script>
+(function(){
+  const {EVENTS,usd,bs,toBs,evMin,evFirst,artHTML,$,$$,esc,motion}=GT;
+  if(window.gsap&&window.Flip) gsap.registerPlugin(Flip);
+  const CITIES=["Todas las sedes","Margarita","Caracas","Valencia"];
+  const MES=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+  let cat="", city="";
+  $("#cities").innerHTML=CITIES.map((c,i)=>`<button type="button" class="chip" aria-pressed="${i===0}">${c}</button>`).join("");
+
+  // destacado + fechas de la gira
+  const h=EVENTS[0], hf=evFirst(h), hm=evMin(h);
+  $("#feat-ph").innerHTML=artHTML(h,"flat");
+  $("#feat-tags").innerHTML=`<span class="tag solid">Gira · ${h.sessions.length} sedes</span><span class="tag solid">${esc(h.cat)}</span>`;
+  $("#feat-t").textContent=h.title;
+  $("#feat-m").textContent=hf.city+" · "+hf.day+" · "+hf.start;
+  $("#feat-usd").textContent="Desde "+usd(hm); $("#feat-ves").textContent=bs(toBs(hm))+" · tasa BCV";
+  $("#feat-dates").innerHTML=h.sessions.map(s=>{const d=new Date(s.date+"T12:00:00"),m=GT.minPrice(s);const inner=`<span class="dtb"><b>${d.getDate()}</b><span>${MES[d.getMonth()]}</span></span><span><span class="nm">${esc(s.city)}</span><span class="muted small">${esc(s.day)} · ${esc(s.start)}</span></span><span class="st">${s.soldOut?'<span class="tag danger">Agotado</span>':`<span class="usd">${usd(m)}</span><span class="bsv">${bs(toBs(m))}</span>`}</span>`;return s.soldOut?`<div class="drow off" role="listitem">${inner}</div>`:`<a class="drow" role="listitem" href="evento.html?e=${h.id}&s=${s.id}">${inner}</a>`}).join("");
+
+  // esta semana: proximos 7 dias desde hoy (vie 9 oct 2026, fecha del prototipo)
+  const TODAY=new Date("2026-10-09T00:00:00"), LIM=new Date(TODAY.getTime()+7*86400000);
+  const wk=[]; EVENTS.forEach(e=>e.sessions.forEach(s=>{const d=new Date(s.date+"T12:00:00");if(d>=TODAY&&d<=LIM&&!s.soldOut)wk.push({e,s});}));
+  wk.sort((a,b)=>a.s.date.localeCompare(b.s.date));
+  if(wk.length){ $("#wk-sec").hidden=false; $("#wk").innerHTML=wk.map(({e,s})=>`<article class="wk">${artHTML(e)}<div class="over"><h3><a href="evento.html?e=${e.id}&s=${s.id}">${esc(e.title.split(":")[0])}</a></h3><p class="when">${esc(s.day)} · ${esc(s.city)} · ${usd(GT.minPrice(s))}</p></div></article>`).join(""); }
+
+  // grilla: se construye una vez; filtrar = mostrar/ocultar con Flip
+  const order=EVENTS.slice().sort((a,b)=>evFirst(a).date.localeCompare(evFirst(b).date));
+  function card(e){
+    const f=evFirst(e), live=e.sessions.filter(s=>!s.soldOut), m=evMin(e);
+    const low=live.some(s=>s.areas.some(a=>a.left>0&&a.left<=9));
+    const cities=e.sessions.map(s=>s.city).join(" · ");
+    return `<article class="ev" data-id="${e.id}">
+      ${artHTML(e,"",`<div class="tags">${e.sessions.length>1?`<span class="tag solid">${e.sessions.length} sedes</span>`:""}${low?'<span class="tag solid">Últimas entradas</span>':""}</div>`)}
+      <div class="tx">
+        <h3><a href="evento.html?e=${e.id}">${esc(e.title)}</a></h3>
+        <p class="when">${e.sessions.length>1?"Desde el ":""}${esc(f.day)} · ${esc(e.sessions.length>1?cities:f.city)}</p>
+        <div class="pr"><span class="usd">${usd(m)}</span><span class="bsv">${bs(toBs(m))} · tasa BCV</span></div>
+      </div>
+    </article>`;
+  }
+  $("#grid").innerHTML=order.map(card).join("");
+  const cards=$$("#grid .ev");
+  const cols=()=>matchMedia("(min-width:1040px)").matches?4:matchMedia("(min-width:760px)").matches?3:2;
+  function apply(){
+    const mo=$("#f-date").value, vis=new Set(EVENTS.filter(e=>(!cat||e.cat===cat)&&e.sessions.some(s=>(!city||s.city===city)&&(!mo||s.date.slice(5,7)===mo))).map(e=>e.id));
+    cards.forEach(c=>{c.style.display=vis.has(c.dataset.id)?"":"none";c.classList.remove("wide");c.style.gridColumn="";});
+    const shown=cards.filter(c=>vis.has(c.dataset.id)), n=shown.length, k=cols();
+    const span=k-((n-1)%k);
+    if(n>1&&span>1){const l=shown[n-1];l.classList.add("wide");l.style.gridColumn="span "+span;}
+    $("#empty").hidden=n>0;
+    $("#count").textContent=n+(n===1?" evento":" eventos")+" · precio por entrada, con su equivalente en Bs a tasa BCV";
+  }
+  let first=true;
+  function render(){
+    const rm=matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if(first||rm||!window.Flip){ apply(); if(first&&!rm&&window.gsap) motion(g=>g.from("#grid .ev",{y:20,autoAlpha:0,duration:.55,ease:"power3.out",stagger:.06,clearProps:"all"})); first=false; return; }
+    const st=Flip.getState(cards);
+    apply();
+    Flip.from(st,{duration:.5,ease:"power3.inOut",absolute:true,scale:false,nested:false,
+      onEnter:els=>gsap.fromTo(els,{autoAlpha:0,scale:.92},{autoAlpha:1,scale:1,duration:.4,ease:"power3.out",clearProps:"all"}),
+      onLeave:els=>gsap.to(els,{autoAlpha:0,scale:.92,duration:.25,ease:"power2.in"})});
+  }
+  $("#cities").addEventListener("click",e=>{const b=e.target.closest(".chip");if(!b)return;const chips=$$(".chip",$("#cities"));chips.forEach(x=>x.setAttribute("aria-pressed",x===b));const i=chips.indexOf(b);city=i===0?"":b.textContent;render();});
+  $("#f-cat").addEventListener("change",e=>{cat=e.target.value;render();});
+  $("#f-date").addEventListener("change",render);
+  $("#reset").addEventListener("click",()=>{cat="";city="";$("#f-cat").value="";$("#f-date").value="";$$(".chip",$("#cities")).forEach((x,i)=>x.setAttribute("aria-pressed",i===0));render();});
+  addEventListener("resize",()=>apply());
+  render();
+  motion(g=>{
+    const tl=g.timeline({defaults:{ease:"power4.out"}});
+    tl.from("#feat .ph img",{scale:1.06,duration:1.2,ease:"power3.out"},0)
+      .from("#feat .over > *",{y:24,autoAlpha:0,duration:.7,stagger:.08},.15)
+      .from("#feat-dates .drow",{y:16,autoAlpha:0,duration:.5,stagger:.08,clearProps:"all"},.5);
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="es-VE">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>Datos y pago · Global Ticket</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 28 28%27%3E%3Crect width=%2728%27 height=%2728%27 rx=%276%27 fill=%27%233B5BFF%27/%3E%3Cpath d=%27M7 9h14v3a2 2 0 0 0 0 4v3H7v-3a2 2 0 0 0 0-4z%27 fill=%27white%27/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-nav="checkout.html">
+<main id="main">
+ <div class="wrap">
+  <p class="crumb"><a href="areas.html"><span aria-hidden="true">&larr;</span>&nbsp;Cambiar entradas</a></p>
+  <ol class="steps" aria-label="Pasos de la compra"><li>Evento</li><li>Entradas</li><li aria-current="step">Datos y pago</li><li>Listo</li></ol>
+  <div class="timer" id="timer" role="timer" aria-label="Tiempo de reserva"><span><strong>Entradas reservadas</strong></span><span class="t" aria-hidden="true">10:00</span><span class="bar2" aria-hidden="true"></span><span class="sr tlive" aria-live="polite"></span></div>
+  <div class="callout warn" id="expired" hidden style="margin-bottom:14px"><strong>Tu reserva venció.</strong><span>Vuelve a elegir tus entradas para reservarlas otra vez.</span><a class="btn sec" href="areas.html" style="margin-top:8px;justify-self:start">Volver a las entradas</a></div>
+
+  <form class="flow" id="form" novalidate>
+   <div>
+    <h1>Casi listo</h1>
+    <p class="muted" style="margin:10px 0 22px">No necesitas cuenta. Con tu correo y tu WhatsApp te enviamos la entrada.</p>
+
+    <section class="sheet" aria-labelledby="h-datos">
+     <h2 id="h-datos" style="margin-bottom:14px">Tus datos</h2>
+     <div class="field"><label for="nombre">Nombre y apellido</label><input id="nombre" name="nombre" autocomplete="name" required aria-describedby="e-nombre"><span class="err" id="e-nombre" role="alert">Escribe tu nombre completo.</span></div>
+     <div class="field"><label for="correo">Correo</label><input id="correo" name="correo" type="email" inputmode="email" autocomplete="email" required aria-describedby="h-correo e-correo"><span class="hint" id="h-correo">Aquí llegan tu entrada y tu factura.</span><span class="err" id="e-correo" role="alert">Escribe un correo válido, por ejemplo nombre@correo.com.</span></div>
+     <div class="field" style="margin-bottom:0"><label for="tel">Teléfono (WhatsApp)</label><input id="tel" name="tel" type="tel" inputmode="tel" autocomplete="tel" placeholder="0414 000 0000" required aria-describedby="h-tel e-tel"><span class="hint" id="h-tel">También te enviamos la entrada por WhatsApp.</span><span class="err" id="e-tel" role="alert">Escribe tu número con código, por ejemplo 0414 000 0000.</span></div>
+    </section>
+
+    <section class="sheet" aria-labelledby="h-pago">
+     <h2 id="h-pago" style="margin-bottom:6px">¿Cómo pagas?</h2>
+     <p class="muted small" style="margin-bottom:14px">Pago Móvil y tarjeta se confirman al instante. Zelle y USDT los revisamos antes de entregarte el QR.</p>
+     <fieldset class="method" id="method">
+      <legend class="sr">Método de pago</legend>
+      <label class="opt"><input type="radio" name="m" value="pm"><span class="rd" aria-hidden="true"></span><span><strong>Pago Móvil</strong><br><span class="muted small">Pagas en Bs · confirmación al instante</span></span></label>
+      <div class="mdetail" id="d-pm">
+        <div class="field"><label for="pm-banco">Tu banco</label><select id="pm-banco"><option value="">Elige tu banco</option><option>Banco de ejemplo A (0000)</option><option>Banco de ejemplo B (0001)</option><option>Banco de ejemplo C (0002)</option></select></div>
+        <div class="fgrid c2"><div class="field"><label for="pm-ci">Cédula</label><input id="pm-ci" inputmode="numeric" placeholder="V-12345678"></div><div class="field"><label for="pm-tel">Teléfono del banco</label><input id="pm-tel" type="tel" inputmode="tel" placeholder="0414 000 0000"></div></div>
+        <p class="small muted">Tu banco te enviará un código por SMS para autorizar el pago. Simulado en este prototipo.</p>
+      </div>
+      <label class="opt"><input type="radio" name="m" value="tj"><span class="rd" aria-hidden="true"></span><span><strong>Tarjeta</strong><br><span class="muted small">Débito o crédito · pagas en Bs · al instante</span></span></label>
+      <div class="mdetail" id="d-tj">
+        <div class="field"><label for="tj-n">Número de tarjeta</label><input id="tj-n" inputmode="numeric" autocomplete="cc-number" placeholder="0000 0000 0000 0000"></div>
+        <div class="fgrid c2"><div class="field"><label for="tj-v">Vence</label><input id="tj-v" autocomplete="cc-exp" placeholder="MM/AA"></div><div class="field"><label for="tj-c">Código de seguridad</label><input id="tj-c" inputmode="numeric" autocomplete="cc-csc" placeholder="123"></div></div>
+        <p class="small muted">Simulado: no guardamos ni enviamos datos de tarjeta.</p>
+      </div>
+      <label class="opt"><input type="radio" name="m" value="zl"><span class="rd" aria-hidden="true"></span><span><strong>Zelle</strong><br><span class="muted small">Pagas en USD · lo verificamos (hasta 24 h, plazo de ejemplo)</span></span></label>
+      <div class="mdetail" id="d-zl">
+        <dl class="kv"><dt>Envía a</dt><dd>pagos@globalticket.example</dd><dt>Nombre</dt><dd>Global Ticket C.A. (ejemplo)</dd><dt>Monto exacto</dt><dd class="zmonto"></dd></dl>
+        <div class="field"><label for="zl-ref">Referencia de la transferencia</label><input id="zl-ref" placeholder="Ej.: ZL8842199"></div>
+        <div class="field" style="margin-bottom:0"><label for="zl-file">Comprobante (captura o PDF)</label><input id="zl-file" type="file" accept="image/*,.pdf" aria-describedby="h-zf"><span class="hint" id="h-zf">Foto o captura donde se vea el monto y la referencia.</span></div>
+      </div>
+      <label class="opt"><input type="radio" name="m" value="us"><span class="rd" aria-hidden="true"></span><span><strong>USDT (Binance)</strong><br><span class="muted small">Pagas en USDT · lo verificamos (hasta 24 h, plazo de ejemplo)</span></span></label>
+      <div class="mdetail" id="d-us">
+        <dl class="kv"><dt>Red</dt><dd>TRON (TRC20)</dd><dt>Dirección</dt><dd>TEjemploDireccionUSDT000000000000 (ejemplo)</dd><dt>Monto exacto</dt><dd class="zmonto"></dd></dl>
+        <p class="small muted" style="margin-bottom:12px">1 USDT se toma como 1 USD. No se usa la tasa P2P.</p>
+        <div class="field"><label for="us-ref">ID de la transacción (TxID) o referencia</label><input id="us-ref" placeholder="Pega aquí el TxID"></div>
+        <div class="field" style="margin-bottom:0"><label for="us-file">Comprobante (captura o PDF)</label><input id="us-file" type="file" accept="image/*,.pdf"></div>
+      </div>
+     </fieldset>
+     <span class="err" id="e-method" role="alert" style="margin-top:10px">Elige cómo vas a pagar.</span>
+     <span class="err" id="e-det" role="alert" style="margin-top:10px">Completa los datos de tu método de pago.</span>
+    </section>
+    <p class="small muted" style="margin-top:16px">Al pagar aceptas la <a href="#pol">política de reembolso</a> que ves en el resumen.</p>
+   </div>
+
+   <aside class="aside" aria-label="Resumen del pedido">
+    <div class="sheet" id="summary">
+      <h2 id="evt" style="margin-bottom:4px"></h2>
+      <p class="muted small" style="margin-bottom:10px" id="evw"></p>
+      <div class="sum" id="lines"></div>
+      <div class="sum"><div class="tot">
+        <span class="small muted">Total</span>
+        <div class="big" id="t-usd"></div>
+        <div class="bsv" id="t-ves"></div>
+        <span class="rate-note" id="rate"></span>
+        <p class="small muted" style="margin-top:6px">Esta tasa queda guardada en tu orden. Si el dólar sube mañana, tu precio no cambia.</p>
+      </div></div>
+      <p class="callout info" id="pagas" style="margin-top:14px"></p>
+      <button class="btn block desk-only" id="pay" type="submit" style="margin-top:14px">Pagar</button>
+      <div id="pol" style="margin-top:16px"><strong>Reembolso</strong><p class="small muted" id="refund"></p></div>
+    </div>
+   </aside>
+   <div class="bar mob" style="grid-column:1/-1"><div class="in"><div class="tt"><span class="small muted">Total</span><span class="price" id="pb-usd"></span><span class="bsv small" id="pb-ves"></span></div><button class="btn" id="pay2" type="submit">Pagar</button></div></div>
+  </form>
+ </div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" integrity="sha384-HOvlOYPIs/zjoIkWUGXkVmXsjr8GuZLV+Q+rcPwmJOVZVpvTSXQChiN4t9Euv9Vc" crossorigin="anonymous"></script>
+<script src="js/app.js"></script>
+<script>
+(function(){
+  const {currentOrder,usd,bs,store,$,$$,esc,motion,fmt,RATE,startTimer,REFUND}=GT;
+  let o=currentOrder();
+  if(!o.count){ store.patch({qty:{gen:2}}); o=currentOrder(); } // demo: pedido de ejemplo si llegan directo
+  $("#evt").textContent=o.ev.title; $("#evw").textContent=o.ses.city+" · "+o.ses.day;
+  $("#lines").innerHTML=o.lines.map(l=>`<div class="ln"><span>${l.id==="hotel"?"":l.n+" × "}${esc(l.name)}</span><span>${usd(l.sub)}</span></div>`).join("")+`<div class="ln tax"><span>Impuestos (IVA/IGTF)</span><span>Por definir</span></div>`;
+  $("#t-usd").textContent=usd(o.total); $("#t-ves").textContent=bs(o.totalBs)+" · tasa BCV";
+  $("#rate").innerHTML="Tasa BCV del día: <b>"+fmt(RATE,2)+" Bs/USD</b> · ejemplo";
+  $("#refund").textContent=REFUND[o.ev.refund];
+  $$(".zmonto").forEach(e=>e.textContent=usd(o.total)+(e.closest("#d-us")?" (USDT)":""));
+  let expired=false;
+  startTimer($("#timer"),()=>{expired=true;$("#expired").hidden=false;});
+  const method=()=>{const c=$("input[name=m]:checked");return c&&c.value;};
+  function label(){
+    const m=method(); let pagas,btn;
+    if(m==="pm"||m==="tj"){pagas=`Pagas <strong>${bs(o.totalBs)}</strong> (${usd(o.total)} a ${fmt(RATE,2)} Bs/USD).`;btn="Pagar "+bs(o.totalBs);}
+    else if(m==="zl"||m==="us"){pagas=`Pagas <strong>${usd(o.total)}${m==="us"?" en USDT":""}</strong>. Lo verificamos y te avisamos por correo y WhatsApp.`;btn="Enviar comprobante";}
+    else {pagas=`Elige un método para ver cuánto pagas. Total: <strong>${usd(o.total)}</strong> o <strong>${bs(o.totalBs)}</strong>.`;btn="Pagar";}
+    $("#pagas").innerHTML="<span>"+pagas+"</span>"; $("#pay").textContent=btn; $("#pay2").textContent=btn;
+    $("#pb-usd").textContent=usd(o.total); $("#pb-ves").textContent=bs(o.totalBs)+" · tasa BCV";
+  }
+  $("#method").addEventListener("change",()=>{
+    $$(".mdetail").forEach(d=>d.classList.remove("on"));
+    const d=$("#d-"+method()); d.classList.add("on");
+    $("#e-method").classList.remove("on"); $("#e-det").classList.remove("on"); label();
+    motion(g=>g.from(d,{autoAlpha:0,y:-8,duration:.35,ease:"power3.out"}));
+  });
+  function bad(id,cond){const el=$("#"+id);el.setAttribute("aria-invalid",cond);const er=$("#e-"+id);if(er)er.classList.toggle("on",cond);return cond;}
+  $("#form").addEventListener("submit",e=>{
+    e.preventDefault(); if(expired)return;
+    const errs=[bad("nombre",$("#nombre").value.trim().split(/\s+/).length<2),bad("correo",!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test($("#correo").value)),bad("tel",$("#tel").value.replace(/\D/g,"").length<10)];
+    const m=method(); let det=false;
+    $("#e-method").classList.toggle("on",!m);
+    if(m==="pm") det=!$("#pm-banco").value||$("#pm-ci").value.length<5||$("#pm-tel").value.replace(/\D/g,"").length<10;
+    if(m==="tj") det=$("#tj-n").value.replace(/\D/g,"").length<13||$("#tj-v").value.length<4||$("#tj-c").value.length<3;
+    if(m==="zl") det=!$("#zl-ref").value.trim()||!$("#zl-file").files.length;
+    if(m==="us") det=!$("#us-ref").value.trim()||!$("#us-file").files.length;
+    $("#e-det").classList.toggle("on",!!m&&det);
+    if(errs.some(Boolean)||!m||det){const f=$("[aria-invalid=true]")||$("#e-method.on")||$("#e-det.on");f.scrollIntoView({block:"center"});if(f.focus)f.focus();return;}
+    const code="GT-"+(48000+Math.floor(Math.random()*999));
+    store.patch({buyer:{nombre:$("#nombre").value.trim(),correo:$("#correo").value.trim(),tel:$("#tel").value.trim()},method:m,orderCode:code,rate:RATE});
+    location.href="confirmacion.html?estado="+((m==="zl"||m==="us")?"verificacion":"confirmada");
+  });
+  label();
+  motion(g=>g.from(".sheet",{y:22,autoAlpha:0,duration:.55,ease:"power3.out",stagger:.1,clearProps:"all"}));
+})();
+</script>
+</body>
+</html>

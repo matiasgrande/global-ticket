@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="es-VE">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>Tu compra · Global Ticket</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 28 28%27%3E%3Crect width=%2728%27 height=%2728%27 rx=%276%27 fill=%27%233B5BFF%27/%3E%3Cpath d=%27M7 9h14v3a2 2 0 0 0 0 4v3H7v-3a2 2 0 0 0 0-4z%27 fill=%27white%27/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-nav="confirmacion.html">
+<main id="main">
+ <div class="wrap narrow">
+  <nav class="demo-switch" aria-label="Estado de la compra (solo prototipo)"><span>Ver estado:</span><a href="?estado=confirmada" data-s="confirmada">Confirmada</a><a href="?estado=verificacion" data-s="verificacion">En verificación</a><a href="?estado=rechazada" data-s="rechazada">Rechazada</a></nav>
+  <section class="conf-head" aria-live="polite">
+    <span class="sico" id="sico"><svg viewBox="0 0 24 24" aria-hidden="true" id="sv"></svg></span>
+    <h1 id="h1"></h1>
+    <p id="lede" style="font-size:1.125rem;color:var(--text-soft)"></p>
+  </section>
+
+  <div class="callout warn" id="deadline" hidden><strong id="dl-t"></strong><span id="dl-s"></span></div>
+
+  <div class="pass" id="pass">
+    <div class="pass-ph" id="ptop">
+      <div id="p-ph"></div>
+      <div class="over"><p class="small" id="p-cat"></p><h2 id="p-title"></h2></div>
+    </div>
+    <dl>
+      <div><dt>Fecha</dt><dd id="p-date"></dd></div>
+      <div><dt>Puertas</dt><dd id="p-doors"></dd></div>
+      <div class="wide"><dt>Sede</dt><dd id="p-venue"></dd></div>
+      <div><dt>Área</dt><dd id="p-area"></dd></div>
+      <div><dt>A nombre de</dt><dd id="p-name"></dd></div>
+    </dl>
+    <div class="pass-q" id="pstub">
+      <div id="qrbox"></div>
+      <p class="serial" id="serial"></p>
+      <p class="small muted" id="qrnote"></p>
+    </div>
+  </div>
+
+  <div class="actions" id="actions">
+    <button class="btn" type="button" id="b-save">Guardar en el teléfono</button>
+    <button class="btn sec" type="button" id="b-pdf">Descargar PDF</button>
+  </div>
+
+  <h2 style="margin:36px 0 12px" id="h-next"></h2>
+  <ul class="delivery" id="delivery"></ul>
+
+  <div class="sheet" style="margin-top:28px" id="sum">
+    <h2 style="margin-bottom:8px">Resumen de tu orden <span class="muted small" style="font-weight:400" id="ocode"></span></h2>
+    <div class="sum" id="lines"></div>
+    <div class="sum"><div class="tot"><div class="ln" style="padding:0"><span>Total</span><span class="price" id="t-usd"></span></div><div class="ln" style="padding:4px 0 0"><span class="muted" id="t-lbl"></span><span class="bsv" id="t-ves"></span></div><span class="rate-note" id="rate"></span><p class="small muted">Tasa congelada en tu orden. No cambia si el dólar se mueve.</p></div></div>
+  </div>
+  <p style="margin-top:24px;display:flex;gap:12px;flex-wrap:wrap"><a class="btn sec" href="mis-entradas.html">Ir a Mis entradas</a><a class="btn sec" href="index.html">Ver más eventos</a></p>
+ </div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" integrity="sha384-HOvlOYPIs/zjoIkWUGXkVmXsjr8GuZLV+Q+rcPwmJOVZVpvTSXQChiN4t9Euv9Vc" crossorigin="anonymous"></script>
+<script src="js/app.js"></script>
+<script>
+(function(){
+  const {currentOrder,usd,bs,toBs,store,$,$$,esc,motion,fmt,RATE,qrSVG,toast,artHTML}=GT;
+  const st=new URLSearchParams(location.search).get("estado")||"confirmada";
+  $$(".demo-switch a").forEach(a=>{if(a.dataset.s===st)a.setAttribute("aria-current","true");});
+  let o=currentOrder();
+  if(!o.count){ const q={}; q[o.ses.areas[0].id]=2; store.patch({qty:q}); o=currentOrder(); }
+  const b=store.get().buyer||{nombre:"Marisol Contreras",correo:"marisol@correo.example",tel:"0414 000 0000"};
+  const sm=store.get().method;
+  const m=st==="confirmada"?((sm==="pm"||sm==="tj")?sm:"pm"):((sm==="zl"||sm==="us")?sm:"zl");
+  const code=store.get().orderCode||"GT-48213";
+  const serial="N° "+code.replace("GT-","")+"-01";
+  const MN={pm:"Pago Móvil",tj:"Tarjeta",zl:"Zelle",us:"USDT (Binance)"};
+  const ticketLine=o.lines.find(l=>l.id!=="hotel");
+  $("#p-ph").innerHTML=artHTML(o.ev,"r1610");
+  $("#p-cat").textContent=o.ev.cat+" · "+o.ev.tag;
+  $("#p-title").textContent=o.ev.title;
+  $("#p-date").textContent=o.ses.day+" 2026"; $("#p-doors").textContent=o.ses.doors;
+  $("#p-venue").textContent=o.ses.venue; $("#p-area").textContent=ticketLine.name+" × "+ticketLine.n; $("#p-name").textContent=b.nombre;
+  $("#ocode").textContent="· "+code;
+  $("#lines").innerHTML=o.lines.map(l=>`<div class="ln"><span>${l.id==="hotel"?"":l.n+" × "}${esc(l.name)}</span><span>${usd(l.sub)}</span></div>`).join("")+`<div class="ln tax"><span>Impuestos (IVA/IGTF)</span><span>Por definir</span></div>`;
+  $("#t-usd").textContent=usd(o.total);
+  const inBs=(m==="pm"||m==="tj");
+  $("#t-lbl").textContent=inBs?"Pagado en bolívares":"Equivalente en bolívares";
+  $("#t-ves").textContent=bs(o.totalBs);
+  $("#rate").innerHTML="Tasa BCV del día: <b>"+fmt(RATE,2)+" Bs/USD</b> · ejemplo";
+  const when=new Date(Date.now()+24*3600*1000);
+  const wtxt=new Intl.DateTimeFormat("es-VE",{weekday:"long",day:"numeric",month:"long",hour:"numeric",minute:"2-digit"}).format(when);
+  const SV={ok:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',pending:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',danger:'<path d="M7 7l10 10M17 7L7 17"/>'};
+  function setStatus(k){const s=$("#sico");s.className="sico "+k;$("#sv").innerHTML=SV[k];}
+  const ds=$("#delivery");
+  const li=(ic,t,s,cls)=>`<li><span class="ic ${cls||""}" aria-hidden="true">${ic}</span><span><strong>${t}</strong><br><span class="muted small">${s}</span></span></li>`;
+  if(st==="confirmada"){
+    setStatus("ok");
+    $("#h1").textContent="Entrada confirmada";
+    $("#lede").textContent="Pagaste con "+MN[m]+". Tu QR ya está activo: muéstralo en la puerta desde el teléfono.";
+    $("#qrbox").innerHTML='<div class="qr" id="qr">'+qrSVG(serial)+'</div>'; $("#serial").textContent=serial;
+    $("#qrnote").textContent="QR de ejemplo, no escaneable. En producción va firmado y atado a esta compra.";
+    $("#h-next").textContent="Ya la enviamos";
+    ds.innerHTML=li("✓","Por correo",esc(b.correo)+" · entrada con QR y PDF")+li("✓","Por WhatsApp",esc(b.tel)+" · enlace a tu entrada")+li("✓","Factura por correo","Llega al mismo correo, como en cualquier compra en línea.")+li("✓","En «Mis entradas»","Con el enlace del correo la abres sin contraseña, aun sin señal si ya la guardaste.");
+  } else if(st==="verificacion"){
+    setStatus("pending");
+    $("#h1").textContent="En verificación";
+    $("#lede").textContent="Recibimos tu comprobante de "+MN[m]+" y lo estamos revisando. Tu lugar está apartado mientras tanto.";
+    $("#deadline").hidden=false; $("#dl-t").textContent="Te respondemos a más tardar el "+wtxt;
+    $("#dl-s").textContent="Plazo de ejemplo: normalmente menos de 2 horas en horario de taquilla, máximo 24 h. Aviso por correo y WhatsApp apenas se apruebe.";
+    $("#qrbox").innerHTML='<div class="qr locked">El QR se activa cuando aprobemos tu pago</div>'; $("#serial").textContent=serial+" · pendiente";
+    $("#qrnote").textContent="Mientras tanto no necesitas hacer nada más.";
+    $("#actions").hidden=true;
+    $("#h-next").textContent="Qué sigue";
+    ds.innerHTML=`<li style="display:block;padding:18px 16px"><ol class="timeline"><li><span class="dot done"></span><span><strong>Comprobante recibido</strong><br><span class="muted small">Referencia y captura guardadas.</span></span></li><li><span class="dot now"></span><span><strong>Revisión del pago</strong><br><span class="muted small">Alguien del equipo compara monto y referencia. Estás aquí.</span></span></li><li><span class="dot"></span><span><strong>Aprobado: te llega el QR</strong><br><span class="muted small">Por correo y WhatsApp, junto con tu factura.</span></span></li></ol></li>`+li("!","Si hay un problema","Te escribimos con el motivo y qué hacer. Tu lugar sigue apartado 2 horas más.","wait");
+  } else {
+    setStatus("danger");
+    $("#h1").textContent="Pago rechazado";
+    $("#lede").textContent="El monto del comprobante ("+usd(Math.max(1,o.total-5))+") no coincide con el total de tu orden ("+usd(o.total)+"). No se cobró nada de más.";
+    $("#qrbox").innerHTML='<div class="qr locked">Sin QR: pago no aprobado</div>'; $("#serial").textContent=serial+" · sin activar";
+    $("#qrnote").textContent="Tu lugar sigue apartado por 2 horas.";
+    $("#actions").innerHTML='<a class="btn" href="checkout.html">Corregir el pago</a><a class="btn sec" href="areas.html">Cambiar entradas</a>';
+    $("#h-next").textContent="Tienes dos opciones";
+    ds.innerHTML=li("1","Reenvía el comprobante correcto","Con el monto completo de "+usd(o.total)+" y la misma referencia.","bad")+li("2","Paga con Pago Móvil o tarjeta","Se confirman al instante y recibes el QR en el momento.","bad");
+  }
+  $("#b-save")&&$("#b-save").addEventListener("click",()=>toast("Guardada. Ahora la ves en «Mis entradas» aun sin señal."));
+  $("#b-pdf")&&$("#b-pdf").addEventListener("click",()=>toast("PDF de ejemplo: en producción se descarga aquí."));
+
+  // Momento firmado: el estado se resuelve y el QR se revela de abajo hacia arriba.
+  motion(g=>{
+    const tl=g.timeline({defaults:{ease:"power3.out"}});
+    tl.from("#sico",{scale:.7,autoAlpha:0,duration:.45,ease:"back.out(1.6)"})
+      .from("#sico path,#sico circle",{strokeDashoffset:40,strokeDasharray:40,duration:.55,ease:"power2.out",stagger:.1},"<.1")
+      .from(".conf-head h1,.conf-head p",{y:18,autoAlpha:0,duration:.6,stagger:.08},"<.15")
+      .from("#pass",{y:36,autoAlpha:0,duration:.7,ease:"power4.out"},"<.1");
+    if($("#qr")) tl.fromTo("#qr",{clipPath:"inset(0 0 100% 0 round 20px)"},{clipPath:"inset(0 0 0% 0 round 20px)",duration:.9,ease:"expo.out"},">-.15")
+                   .from("#serial,#qrnote",{autoAlpha:0,y:8,duration:.4,stagger:.05},"<.5");
+    tl.from("#delivery > li",{y:14,autoAlpha:0,duration:.45,stagger:.07},"-=.3");
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="es-VE">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>Crear evento · Panel Global Ticket</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 28 28%27%3E%3Crect width=%2728%27 height=%2728%27 rx=%276%27 fill=%27%233B5BFF%27/%3E%3Cpath d=%27M7 9h14v3a2 2 0 0 0 0 4v3H7v-3a2 2 0 0 0 0-4z%27 fill=%27white%27/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body class="panel" data-nav="panel-evento.html">
+<main class="pn-main" id="main">
+  <div class="pn-top">
+    <div><h1>Crear evento</h1><p class="muted">Borrador · no visible al público hasta publicar.</p></div>
+    <div class="ctl"><button class="btn sec" type="button" id="draft">Guardar borrador</button><button class="btn sm" type="button" id="pub">Publicar evento</button></div>
+  </div>
+
+  <form id="f" novalidate>
+  <section class="card" aria-labelledby="h1">
+    <h2 id="h1">Datos del evento</h2>
+    <div class="fgrid c2">
+      <div class="field"><label for="n">Nombre del evento</label><input id="n" value="Cacho Zapata: Ya Casi Llego"><span class="err" id="e-n" role="alert">El evento necesita un nombre.</span></div>
+      <div class="field"><label for="c">Categoría</label><select id="c"><option>Conciertos</option><option>Fiestas y galas</option><option selected>Comedia</option><option>Música en vivo</option></select></div>
+    </div>
+    <div class="field"><label for="d">Descripción (la ves en la ficha)</label><textarea id="d">Cacho Zapata (artista de ejemplo) vuelve con su show nuevo. Dos horas de comedia.</textarea></div>
+    <div class="fgrid c3">
+      <div class="field"><label for="a">Edad mínima</label><select id="a"><option>Todo público</option><option>+14</option><option>+16</option><option selected>+18</option></select></div>
+      <div class="field"><label for="r">Política de reembolso</label><select id="r"><option selected>Cancelación: 100% en misma moneda y tasa (ejemplo)</option><option>Cancelación o lluvia: 100% en misma moneda y tasa (ejemplo)</option></select><span class="hint">Se muestra al comprador antes de pagar.</span></div>
+      <div class="field"><label for="img">Arte del evento</label><input id="img" type="file" accept="image/*" style="padding:10px 14px;min-height:56px"><span class="hint">Foto 4:3, mínimo 1200 px de ancho.</span></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h2">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap"><h2 id="h2" >Sedes y fechas</h2><button class="btn sec" type="button" id="add-sede">+ Añadir sede</button></div>
+    <div id="sedes"></div>
+  </section>
+
+  <section class="card" aria-labelledby="h3">
+    <h2 id="h3">Paquete con habitación <span class="small">Opcional</span></h2>
+    <label class="switch"><input type="checkbox" id="pk" checked><span>Ofrecer «una noche en Tibisay» junto a la entrada</span></label>
+    <div class="fgrid c2" id="pkf" style="margin-top:10px"><div class="field"><label for="pkp">Precio de la noche (USD, ejemplo)</label><input id="pkp" type="number" min="0" value="68" inputmode="decimal"></div><div class="field"><label for="pkn">Descripción</label><input id="pkn" value="Habitación doble con desayuno (ejemplo)"></div></div>
+  </section>
+  <p class="small muted">Las áreas son zonas con aforo, no asientos numerados. Cada sede define las suyas.</p>
+  </form>
+  <div class="totals" id="tot" aria-live="polite"></div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" integrity="sha384-HOvlOYPIs/zjoIkWUGXkVmXsjr8GuZLV+Q+rcPwmJOVZVpvTSXQChiN4t9Euv9Vc" crossorigin="anonymous"></script>
+<script src="js/app.js"></script>
+<script>
+(function(){
+  const {usd,bs,toBs,fmt,RATE,$,$$,esc,motion,toast}=GT;
+  const CITIES=["Margarita","Caracas","Valencia"];
+  const SEDE0=[
+    {city:"Margarita",venue:"Tibisay Margarita · Sala Costa Azul",date:"2026-11-13",doors:"19:00",start:"20:30",areas:[["General",380,15],["VIP",60,35],["Terraza alta",120,25]]},
+    {city:"Caracas",venue:"Tibisay Caracas · Salón Ávila",date:"2026-11-21",doors:"18:30",start:"20:00",areas:[["General",380,18],["VIP",60,40],["Terraza alta",120,28]]},
+  ];
+  let uid=0;
+  function areaRow(a){const i=++uid;return `<div class="arow" data-row><div class="field full"><label for="an${i}">Área</label><input id="an${i}" value="${esc(a[0])}" data-k="name"></div><div class="field"><label for="ac${i}">Aforo</label><input id="ac${i}" type="number" min="0" inputmode="numeric" value="${a[1]}" data-k="cap"></div><div class="field"><label for="ap${i}">Precio (USD)</label><input id="ap${i}" type="number" min="0" step="0.5" inputmode="decimal" value="${a[2]}" data-k="usd"></div><p class="bsout" data-bs></p><button class="btn sec rm" type="button" data-rm-area aria-label="Quitar esta área">Quitar</button></div>`;}
+  function sedeCard(s,n){const i=++uid;return `<article class="sede" data-sede>
+    <div class="sede-head"><h3>Sede ${n}</h3><button class="btn sec" type="button" data-rm-sede>Quitar sede</button></div>
+    <div class="fgrid c2"><div class="field"><label for="sc${i}">Ciudad</label><select id="sc${i}">${CITIES.map(c=>`<option ${c===s.city?"selected":""}>${c}</option>`).join("")}</select></div><div class="field"><label for="sv${i}">Sede</label><input id="sv${i}" value="${esc(s.venue)}"></div></div>
+    <div class="fgrid c3"><div class="field"><label for="sd${i}">Fecha</label><input id="sd${i}" type="date" value="${s.date}"></div><div class="field"><label for="sp${i}">Abren puertas</label><input id="sp${i}" type="time" value="${s.doors}"></div><div class="field"><label for="ss${i}">Empieza el show</label><input id="ss${i}" type="time" value="${s.start}"></div></div>
+    <h4 style="margin:6px 0 10px">Áreas, aforo y precio</h4>
+    <div data-areas>${s.areas.map(areaRow).join("")}</div>
+    <button class="btn sec" type="button" data-add-area>+ Añadir área</button>
+  </article>`;}
+  function renumber(){$$("[data-sede]").forEach((s,i)=>s.querySelector("h3").textContent="Sede "+(i+1));}
+  function calc(){
+    let cap=0,pot=0;
+    $$("[data-row]").forEach(r=>{const c=+r.querySelector('[data-k=cap]').value||0,u=+r.querySelector('[data-k=usd]').value||0;cap+=c;pot+=c*u;r.querySelector("[data-bs]").textContent=u?"≈ "+bs(toBs(u)):"";});
+    $("#tot").innerHTML=`<span>Sedes: <b>${$$("[data-sede]").length}</b></span><span>Aforo total: <b>${fmt(cap,0)}</b></span><span>Ingreso si se vende todo: <b>${usd(pot)}</b> (≈ ${bs(toBs(pot))} a tasa BCV ${fmt(RATE,2)}, ejemplo)</span>`;
+  }
+  $("#sedes").innerHTML=SEDE0.map((s,i)=>sedeCard(s,i+1)).join("");
+  $("#add-sede").onclick=()=>{$("#sedes").insertAdjacentHTML("beforeend",sedeCard({city:"Valencia",venue:"",date:"",doors:"19:00",start:"20:30",areas:[["General",0,0]]},0));renumber();calc();const l=$("#sedes").lastElementChild;l.querySelector("select").focus();motion(g=>g.from(l,{autoAlpha:0,y:16,duration:.4,ease:"power3.out"}));};
+  $("#sedes").addEventListener("click",e=>{
+    const ra=e.target.closest("[data-rm-area]"),rs=e.target.closest("[data-rm-sede]"),aa=e.target.closest("[data-add-area]");
+    if(aa){const box=aa.closest("[data-sede]").querySelector("[data-areas]");box.insertAdjacentHTML("beforeend",areaRow(["",0,0]));box.lastElementChild.querySelector("input").focus();calc();}
+    if(ra){const row=ra.closest("[data-row]"),box=row.parentElement;if(box.children.length<2){toast("Cada sede necesita al menos un área.");return;}row.remove();calc();}
+    if(rs){if($$("[data-sede]").length<2){toast("El evento necesita al menos una sede.");return;}rs.closest("[data-sede]").remove();renumber();calc();}
+  });
+  $("#sedes").addEventListener("input",calc);
+  $("#pk").addEventListener("change",()=>{$("#pkf").hidden=!$("#pk").checked;});
+  $("#draft").onclick=()=>toast("Borrador guardado. Aún no es visible al público.");
+  $("#pub").onclick=()=>{
+    const bad=!$("#n").value.trim(); $("#e-n").classList.toggle("on",bad); $("#n").setAttribute("aria-invalid",bad);
+    if(bad){$("#n").focus();return;}
+    const noPrice=$$("[data-row]").some(r=>!(+r.querySelector('[data-k=usd]').value)||!(+r.querySelector('[data-k=cap]').value));
+    if(noPrice){toast("Cada área necesita aforo y precio en USD antes de publicar.");return;}
+    toast("Evento publicado (simulado). Ya aparece en la tienda.");
+  };
+  calc();
+  motion(g=>g.from(".card,.sede",{y:16,autoAlpha:0,duration:.5,ease:"power3.out",stagger:.07,clearProps:"all"}));
+})();
+</script>
+</body>
+</html>

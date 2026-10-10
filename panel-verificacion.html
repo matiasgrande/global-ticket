@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="es-VE">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>Verificación de pagos · Panel Global Ticket</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 28 28%27%3E%3Crect width=%2728%27 height=%2728%27 rx=%276%27 fill=%27%233B5BFF%27/%3E%3Cpath d=%27M7 9h14v3a2 2 0 0 0 0 4v3H7v-3a2 2 0 0 0 0-4z%27 fill=%27white%27/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body class="panel" data-nav="panel-verificacion.html">
+<main class="pn-main" id="main">
+  <div class="pn-top">
+    <div><h1>Verificación de pagos</h1><p class="muted">Zelle y USDT esperan aquí. Plazo prometido al comprador: 24 h (plazo de ejemplo). Datos de ejemplo.</p></div>
+    <div class="ctl"><span class="stat" id="pend"></span></div>
+  </div>
+  <div class="q-layout">
+    <section aria-labelledby="h-q">
+      <h2 id="h-q" class="sr">Cola</h2>
+      <ul class="q-list" id="list"></ul>
+    </section>
+    <section class="card q-detail" id="detail" aria-live="polite" aria-labelledby="d-h"></section>
+  </div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" integrity="sha384-HOvlOYPIs/zjoIkWUGXkVmXsjr8GuZLV+Q+rcPwmJOVZVpvTSXQChiN4t9Euv9Vc" crossorigin="anonymous"></script>
+<script src="js/app.js"></script>
+<script>
+(function(){
+  const {usd,bs,toBs,fmt,RATE,$,$$,esc,motion,toast}=GT;
+  const Q=[
+    {id:"GT-48213",who:"Yuleisy Marcano",m:"Zelle",usd:50,got:50,ref:"ZL8842199",age:"2 h 10 min",pct:9,ev:"Cacho Zapata · Margarita · vie 13 nov",items:"2 × General",mail:"yuleisy@correo.example",tel:"0414 000 0001",tx:"Zelle · enviado $50.00 · confirmación 8842199 · 08 oct 2026"},
+    {id:"GT-48219",who:"Andrés Pacheco",m:"USDT",usd:120,got:120,ref:"TxID 9f3a…c71e",age:"5 h 40 min",pct:23,ev:"Fuego Alto · Valencia · sáb 28 nov",items:"2 × VIP, 0 × General",mail:"andres@correo.example",tel:"0424 000 0002",tx:"Binance · retiro 120.00 USDT · red TRC20 · TxID 9f3a…c71e"},
+    {id:"GT-48226",who:"Carolina Ibarra",m:"Zelle",usd:85,got:75,ref:"ZL8843070",age:"9 h 02 min",pct:38,ev:"Gran Gala de Fin de Año · Margarita",items:"1 × Salón general",mail:"caro@correo.example",tel:"0412 000 0003",tx:"Zelle · enviado $75.00 · confirmación 8843070 · 08 oct 2026",flag:"El monto del comprobante (USD 75) no coincide con el total (USD 85)."},
+    {id:"GT-48231",who:"Luis Alfonzo",m:"Zelle",usd:30,got:30,ref:"ZL8843311",age:"15 h 20 min",pct:64,ev:"Cacho Zapata · Caracas · sáb 21 nov",items:"1 × Terraza alta + 0",mail:"luis@correo.example",tel:"0416 000 0004",tx:"Zelle · enviado $30.00 · confirmación 8843311 · 08 oct 2026",dup:"La referencia ZL8843311 ya aparece en otra orden (GT-48104)."},
+    {id:"GT-48240",who:"Daniela Rondón",m:"USDT",usd:56,got:56,ref:"TxID 71bd…02aa",age:"20 h 45 min",pct:86,ev:"Brisa Mayor · Margarita · sáb 10 oct",items:"2 × Terraza",mail:"dani@correo.example",tel:"0414 000 0005",tx:"Binance · retiro 56.00 USDT · red TRC20 · TxID 71bd…02aa"},
+    {id:"GT-48244",who:"Rafael Quintero",m:"Zelle",usd:16,got:16,ref:"ZL8843402",age:"1 h 05 min",pct:5,ev:"Noche de Micrófono Abierto · Caracas",items:"2 × General",mail:"rafa@correo.example",tel:"0426 000 0006",tx:"Zelle · enviado $16.00 · confirmación 8843402 · 09 oct 2026"},
+  ];
+  const state={}; Q.forEach(q=>state[q.id]="pend");
+  let sel=Q[0].id;
+  const REASONS=["El monto no coincide con el total","La referencia no aparece o ya fue usada","El comprobante es ilegible","El pago llegó a otra cuenta"];
+  function badge(){const n=Q.filter(q=>state[q.id]==="pend").length;$("#pend").innerHTML=`<b >${n}</b> por revisar`;const b=$("#qbadge");if(b)b.textContent=n;}
+  function list(){
+    $("#list").innerHTML=Q.map(q=>{const d=state[q.id];const hi=q.pct>=70;return `<li><button class="q-item ${d!=="pend"?"done":""}" type="button" data-id="${q.id}" aria-pressed="${q.id===sel}"><span class="top"><span>${esc(q.who)}</span><span >${usd(q.usd)}</span></span><span class="muted small">${q.m} · ${q.id} · hace ${q.age}</span>${d==="pend"?`<span class="sla" aria-hidden="true"><i class="${hi?"hi":""}" style="width:${q.pct}%;display:block"></i></span><span class="small ${hi?"":"muted"}" style="${hi?"font-weight:800":""}">${hi?"Vence pronto · ":""}${q.pct}% del plazo de 24 h${q.flag||q.dup?" · revisar":""}</span>`:`<span class="small" style="font-weight:800">${d==="ok"?"Aprobada: QR enviado":"Rechazada: aviso enviado"}</span>`}</button></li>`}).join("");
+  }
+  function detail(){
+    const q=Q.find(x=>x.id===sel), d=state[q.id];
+    const checks=[[true,"Comprador","Nombre y teléfono coinciden con la orden."],[!q.flag,"Monto",q.flag||"El monto coincide con el total ("+usd(q.usd)+")."],[!q.dup,"Referencia",q.dup||"La referencia no se había usado antes."]];
+    $("#detail").innerHTML=`<h2 id="d-h">${esc(q.who)} <span class="small">${q.id}</span></h2>
+      <p style="margin-bottom:12px"><b>${esc(q.ev)}</b><br>${esc(q.items)} · ${esc(q.mail)} · WhatsApp ${esc(q.tel)}</p>
+      <div class="fgrid c2">
+        <div><p class="small muted" style="font-weight:700;margin-bottom:6px">Comprobante subido (ejemplo)</p><div class="receipt"><span class="small muted">${q.m==="USDT"?"Binance":"Zelle"}</span><span class="big">${usd(q.got)}</span><span>${esc(q.tx)}</span><span class="small muted">Aquí va la imagen que subió el comprador.</span></div></div>
+        <div><p class="small muted" style="font-weight:700;margin-bottom:6px">Lo que debe coincidir</p><dl style="margin:0;display:grid;grid-template-columns:auto 1fr;gap:4px 14px"><dt class="muted">Total de la orden</dt><dd style="margin:0" >${usd(q.usd)} <span class="muted small">(${bs(toBs(q.usd))} a ${fmt(RATE,2)})</span></dd><dt class="muted">Referencia</dt><dd style="margin:0">${esc(q.ref)}</dd><dt class="muted">Método</dt><dd style="margin:0">${q.m}</dd><dt class="muted">En cola hace</dt><dd style="margin:0">${q.age}</dd></dl></div>
+      </div>
+      <ul class="chk">${checks.map(c=>`<li class="${c[0]?"":"bad"}"><span class="m" aria-hidden="true">${c[0]?"✓":"!"}</span><span><b>${c[1]}.</b> ${esc(c[2])} <span class="sr">${c[0]?"Correcto":"Revisar"}</span></span></li>`).join("")}</ul>
+      ${d==="pend"?`<div class="decide"><button class="btn" id="ok" type="button">Aprobar y enviar QR</button><button class="btn sec" id="no" type="button" aria-expanded="false" aria-controls="rj">Rechazar…</button></div>
+      <div class="reject-box" id="rj"><div class="field"><label for="why">Motivo (se lo enviamos al comprador)</label><select id="why"><option value="">Elige un motivo</option>${REASONS.map(r=>`<option>${r}</option>`).join("")}</select><span class="err" id="e-why" role="alert">Elige un motivo para poder rechazar.</span></div><button class="btn danger" id="rj-go" type="button">Confirmar rechazo</button></div>`
+      :`<p class="callout" style="margin-top:14px"><b>${d==="ok"?"Pago aprobado.":"Pago rechazado."}</b> ${d==="ok"?"El comprador recibió su QR y su factura por correo y WhatsApp.":"El comprador recibió el motivo y qué hacer. Su lugar sigue apartado 2 horas."}</p>`}`;
+    if(d==="pend"){
+      $("#ok").onclick=()=>resolve(q,"ok");
+      $("#no").onclick=()=>{const r=$("#rj");const on=r.classList.toggle("on");$("#no").setAttribute("aria-expanded",on);if(on)$("#why").focus();};
+      $("#rj-go").onclick=()=>{if(!$("#why").value){$("#e-why").classList.add("on");$("#why").setAttribute("aria-invalid","true");$("#why").focus();return;}resolve(q,"no");};
+    }
+  }
+  function resolve(q,r){
+    state[q.id]=r; toast(r==="ok"?"Aprobada. Enviamos el QR y la factura a "+q.who+".":"Rechazada. Le avisamos a "+q.who+" con el motivo.");
+    const next=Q.find(x=>state[x.id]==="pend"); if(next)sel=next.id;
+    list(); detail(); badge();
+    motion(g=>g.from("#detail",{autoAlpha:0,y:10,duration:.35,ease:"power3.out"}));
+  }
+  $("#list").addEventListener("click",e=>{const b=e.target.closest(".q-item");if(!b)return;sel=b.dataset.id;list();detail();motion(g=>g.from("#detail",{autoAlpha:0,y:8,duration:.3,ease:"power3.out"}));if(matchMedia("(max-width:1099px)").matches)$("#detail").scrollIntoView({block:"start",behavior:"smooth"});});
+  list();detail();badge();
+  motion(g=>g.from(".q-item",{x:-14,autoAlpha:0,duration:.4,ease:"power3.out",stagger:.05,clearProps:"all"}));
+})();
+</script>
+</body>
+</html>

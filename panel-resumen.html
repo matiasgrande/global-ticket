@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="es-VE">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>Resumen · Panel Global Ticket</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 28 28%27%3E%3Crect width=%2728%27 height=%2728%27 rx=%276%27 fill=%27%233B5BFF%27/%3E%3Cpath d=%27M7 9h14v3a2 2 0 0 0 0 4v3H7v-3a2 2 0 0 0 0-4z%27 fill=%27white%27/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body class="panel" data-nav="panel-resumen.html">
+<main class="pn-main" id="main">
+  <div class="pn-top">
+    <div><h1>Resumen de ventas</h1><p class="muted">Datos de ejemplo · actualizado hace 2 minutos</p></div>
+    <div class="ctl"><div class="field" style="margin:0"><label class="sr" for="fe">Evento</label><select id="fe"><option value="">Todos los eventos</option></select></div><button class="btn sec" type="button" id="exp">Exportar CSV</button></div>
+  </div>
+
+  <dl class="kpis" id="kpis"></dl>
+
+  <section class="card" aria-labelledby="h-t">
+    <h2 id="h-t">Ventas por evento y sede <span class="small">Aforo vendido sobre el total de la sede</span></h2>
+    <div class="tbl-wrap" tabindex="0" role="region" aria-label="Tabla de ventas por evento y sede, desplazable">
+      <table class="tbl"><thead><tr><th scope="col">Evento / sede</th><th scope="col">Fecha</th><th scope="col">Aforo vendido</th><th scope="col" class="r">Entradas</th><th scope="col" class="r">Ingresos (USD)</th><th scope="col">Estado</th></tr></thead><tbody id="rows"></tbody></table>
+    </div>
+  </section>
+
+  <div class="split">
+    <section class="card" aria-labelledby="h-a">
+      <h2 id="h-a">Aforo vendido por área <span class="small" id="a-sub"></span></h2>
+      <div id="areas"></div>
+    </section>
+    <section class="card" aria-labelledby="h-m">
+      <h2 id="h-m">Ingresos por método <span class="small">USD equivalente a la tasa de cada orden</span></h2>
+      <div class="stack" id="stack" role="img" aria-label="Reparto de ingresos por método de pago"></div>
+      <div class="tbl-wrap"><table class="tbl" style="min-width:0"><thead><tr><th scope="col">Método</th><th scope="col" class="r">Ingresos (USD)</th><th scope="col" class="r">%</th><th scope="col">Conciliación</th></tr></thead><tbody id="meth"></tbody></table></div>
+      <p class="small muted" style="margin-top:12px">Cada orden conserva su tasa BCV congelada; no se recalcula. Referencia P2P Binance hoy: <b id="p2p"></b> Bs/USD. Es solo informativa, nunca se promedia con BCV ni se usa para cobrar. Tasa BCV de ejemplo: <b id="bcv"></b>.</p>
+    </section>
+  </div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" integrity="sha384-HOvlOYPIs/zjoIkWUGXkVmXsjr8GuZLV+Q+rcPwmJOVZVpvTSXQChiN4t9Euv9Vc" crossorigin="anonymous"></script>
+<script src="js/app.js"></script>
+<script>
+(function(){
+  const {EVENTS,usd,fmt,$,$$,esc,motion,RATE,P2P_REF,toast}=GT;
+  const CAPS={cacho:[380,60,120],gala:[200,30,60],brisa:[500,40,80],fuego:[1500,200,500],mic:[80,16,24]};
+  const ALL=[];
+  EVENTS.forEach(e=>e.sessions.forEach(s=>{
+    const areas=s.areas.map((a,i)=>{const cap=CAPS[e.id][i];const sold=s.soldOut?cap:cap-a.left;return {n:["General","VIP","Niveles superiores"][i],cap,sold,rev:sold*a.usd};});
+    ALL.push({e,s,areas,cap:areas.reduce((t,a)=>t+a.cap,0),sold:areas.reduce((t,a)=>t+a.sold,0),rev:areas.reduce((t,a)=>t+a.rev,0)});
+  }));
+  $("#fe").insertAdjacentHTML("beforeend",EVENTS.map(e=>`<option value="${e.id}">${esc(e.title)}</option>`).join(""));
+  $("#p2p").textContent=fmt(P2P_REF,2); $("#bcv").textContent=fmt(RATE,2);
+  const METH=[["Pago Móvil",.38,"c-pm","Automática (banco)"],["Tarjeta",.27,"c-tj","Automática (pasarela)"],["Zelle",.22,"c-zl","Manual: cola de verificación"],["USDT (Binance)",.13,"c-us","Manual: cola de verificación"]];
+  function render(){
+    const id=$("#fe").value, R=ALL.filter(r=>!id||r.e.id===id);
+    const cap=R.reduce((t,r)=>t+r.cap,0), sold=R.reduce((t,r)=>t+r.sold,0), rev=R.reduce((t,r)=>t+r.rev,0);
+    $("#kpis").innerHTML=`<div><dt>Entradas vendidas</dt><dd>${fmt(sold,0)}</dd></div><div><dt>Ingresos</dt><dd>${usd(rev)}</dd></div><div><dt>Aforo vendido</dt><dd>${Math.round(sold/cap*100)}%</dd></div><div><dt>Pagos por verificar</dt><dd><a href="panel-verificacion.html">6</a> <small>Zelle y USDT</small></dd></div>`;
+    $("#rows").innerHTML=R.map(r=>{const p=Math.round(r.sold/r.cap*100);const st=r.s.soldOut?'<span class="tag danger">Agotado</span>':p>=85?'<span class="tag">Casi lleno</span>':'<span class="tag">En venta</span>';
+      return `<tr><td><span class="evn">${esc(r.e.title)}</span><span class="sub">${esc(r.s.city)} · ${esc(r.s.venue.split("·").pop().trim())}</span></td><td>${esc(r.s.day)}</td><td><div class="meter"><span class="trk"><span class="fl ${p>=85?"hi":""}" style="width:${p}%"></span></span><span class="v">${p}%</span></div></td><td class="r">${fmt(r.sold,0)} / ${fmt(r.cap,0)}</td><td class="r">${usd(r.rev)}</td><td>${st}</td></tr>`}).join("");
+    const ag=[0,1,2].map(i=>({n:R[0].areas[i].n,cap:R.reduce((t,r)=>t+r.areas[i].cap,0),sold:R.reduce((t,r)=>t+r.areas[i].sold,0)}));
+    $("#a-sub").textContent=id?"Todas las sedes del evento":"Todos los eventos";
+    $("#areas").innerHTML=ag.map(a=>{const p=Math.round(a.sold/a.cap*100);return `<div class="area-row"><div><b>${a.n}</b><span class="small muted">${fmt(a.sold,0)} de ${fmt(a.cap,0)}</span></div><div class="meter"><span class="trk"><span class="fl ${p>=85?"hi":""}" style="width:${p}%"></span></span><span class="v">${p}%</span></div></div>`}).join("");
+    $("#stack").innerHTML=METH.map(m=>`<span class="${m[2]}" style="width:${m[1]*100}%"></span>`).join("");
+    $("#meth").innerHTML=METH.map(m=>`<tr><td><span class="sw ${m[2]}"></span>${m[0]}</td><td class="r">${usd(Math.round(rev*m[1]))}</td><td class="r">${Math.round(m[1]*100)}%</td><td>${m[3]}</td></tr>`).join("");
+    motion(g=>{g.from(".fl",{scaleX:0,transformOrigin:"0 50%",duration:.8,ease:"power3.out",stagger:.04});g.from("#stack span",{scaleX:0,transformOrigin:"0 50%",duration:.7,ease:"power3.out",stagger:.08});});
+  }
+  $("#fe").addEventListener("change",render);
+  $("#exp").addEventListener("click",()=>toast("CSV de ejemplo: en producción se descarga aquí."));
+  render();
+})();
+</script>
+</body>
+</html>
