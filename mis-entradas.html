@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="color-scheme" content="dark light">
+<meta name="color-scheme" content="dark">
 <title>Mis entradas · Global Ticket</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap">
@@ -15,7 +15,7 @@
  <div class="wrap narrow">
   <section style="padding-top:28px">
     <h1>Mis entradas</h1>
-    <div class="magic" role="note"><p>Entraste con el enlace seguro enviado a <b>mar•••••@correo.example</b>. No necesitas contraseña. No compartas este enlace: abre tus QR.</p></div>
+    <div class="magic" role="note"><p>Entraste con el enlace seguro enviado a <b id="mail">mar•••••@correo.example</b>. No necesitas contraseña. No compartas este enlace: abre tus QR.</p></div>
     <p style="margin-top:14px"><span class="offline">Guardadas en este teléfono: abren aunque no haya señal.</span></p>
   </section>
   <div class="tix-list" id="list"></div>
@@ -34,25 +34,29 @@
 (function(){
   const {EVENTS,qrSVG,artHTML,$,$$,esc,motion,usd,toast}=GT;
   const E=id=>EVENTS.find(e=>e.id===id);
-  const T=[
+  // compras hechas en esta sesión (checkout) primero; después las de ejemplo
+  const raw=GT.store.get().orders, orders=(Array.isArray(raw)?raw:[]).map(GT.paidOrder).filter(Boolean), mine=[];
+  orders.forEach(o=>{let off=0;o.lines.filter(l=>l.id!=="hotel").forEach(l=>{mine.push({off,ev:o.ev,s:o.ses,area:l.name,n:l.n,ser:"N° "+o.p.orderCode.replace("GT-",""),state:o.p.estado==="confirmada"?"ok":"ver"});off+=l.n;});});
+  const c=orders.length&&String(orders[0].p.buyer.correo||""),at=c?c.indexOf("@"):-1; if(at>0)$("#mail").textContent=c.slice(0,Math.min(3,at))+"•••••"+c.slice(at);
+  const T=mine.concat([
     {ev:E("bolero"),s:E("bolero").sessions[0],area:"General",n:2,ser:"N° 48213",state:"ok"},
     {ev:E("salsa"),s:E("salsa").sessions[0],area:"Palapa",n:1,ser:"N° 47790",state:"ok"},
     {ev:E("gala"),s:E("gala").sessions[0],area:"Mesa VIP",n:1,ser:"N° 48302",state:"ver"},
-  ];
+  ]);
   const html=T.map((t,i)=>Array.from({length:t.n},(_,k)=>{
-      const ser=t.ser+"-0"+(k+1);
+      const ser=t.ser+"-"+String((t.off||0)+k+1).padStart(2,"0");
       return `<article class="pass" data-i="${i}" data-k="${k}">
         <div class="pass-ph">${artHTML(t.ev,"r1610")}<div class="over"><div class="tags">${t.state==="ok"?'<span class="tag ok">Lista para la puerta</span>':'<span class="tag pending">En verificación</span>'}</div><h2>${esc(t.ev.title)}</h2></div></div>
-        <dl><div><dt>Fecha</dt><dd>${esc(t.s.day)} 2026</dd></div><div><dt>Puertas</dt><dd>${t.s.doors}</dd></div><div class="wide"><dt>Sede</dt><dd>${esc(t.s.venue)}</dd></div><div><dt>Área</dt><dd>${esc(t.area)}</dd></div><div><dt>Entrada</dt><dd>${k+1} de ${t.n}</dd></div></dl>
+        <dl><div><dt>Fecha</dt><dd>${esc(t.s.day)} 2026</dd></div><div><dt>Puertas</dt><dd>${esc(t.s.doors||t.s.start)}</dd></div><div class="wide"><dt>Sede</dt><dd>${esc(t.s.venue)}</dd></div><div><dt>Área</dt><dd>${esc(t.area)}</dd></div><div><dt>Entrada</dt><dd>${k+1} de ${t.n}</dd></div></dl>
         <div class="pass-q">
-          ${t.state==="ok"?`<div class="qr">${qrSVG(ser)}</div><p class="serial">${ser}</p><button class="btn block" data-open="${i}-${k}" type="button">Pantalla completa para la puerta</button>`:
-          `<div class="qr locked">Se activa al aprobar tu pago</div><p class="serial">${ser} · pendiente</p><p class="small muted">Plazo de respuesta: hoy antes de las 9:00 pm. Te avisamos por correo y WhatsApp.</p>`}
+          ${t.state==="ok"?`<div class="qr">${qrSVG(ser)}</div><p class="serial">${esc(ser)}</p><button class="btn block" data-open="${i}-${k}" type="button">Pantalla completa para la puerta</button>`:
+          `<div class="qr locked">Se activa al aprobar tu pago</div><p class="serial">${esc(ser)} · pendiente</p><p class="small muted">Te respondemos en máximo 24 h (plazo de ejemplo). Te avisamos por correo y WhatsApp.</p>`}
         </div>
       </article>`;}).join("")).join("");
   $("#list").innerHTML=html;
   $("#list").addEventListener("click",e=>{
     const b=e.target.closest("[data-open]"); if(!b)return;
-    const [i,k]=b.dataset.open.split("-").map(Number), t=T[i], ser=t.ser+"-0"+(k+1);
+    const [i,k]=b.dataset.open.split("-").map(Number), t=T[i], ser=t.ser+"-"+String((t.off||0)+k+1).padStart(2,"0");
     $("#d-ev").textContent=t.ev.title+" · "+t.area; $("#d-qr").innerHTML=qrSVG(ser); $("#d-ser").textContent=ser;
     $("#door").showModal();
     motion(g=>g.fromTo("#door .qr",{clipPath:"inset(0 0 100% 0 round 20px)"},{clipPath:"inset(0 0 0% 0 round 20px)",duration:.8,ease:"expo.out"}));

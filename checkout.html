@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="color-scheme" content="dark light">
+<meta name="color-scheme" content="dark">
 <title>Datos y pago · Global Ticket</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap">
@@ -25,9 +25,9 @@
 
     <section class="sheet" aria-labelledby="h-datos">
      <h2 id="h-datos" style="margin-bottom:14px">Tus datos</h2>
-     <div class="field"><label for="nombre">Nombre y apellido</label><input id="nombre" name="nombre" autocomplete="name" required aria-describedby="e-nombre"><span class="err" id="e-nombre" role="alert">Escribe tu nombre completo.</span></div>
-     <div class="field"><label for="correo">Correo</label><input id="correo" name="correo" type="email" inputmode="email" autocomplete="email" required aria-describedby="h-correo e-correo"><span class="hint" id="h-correo">Aquí llegan tu entrada y tu factura.</span><span class="err" id="e-correo" role="alert">Escribe un correo válido, por ejemplo nombre@correo.com.</span></div>
-     <div class="field" style="margin-bottom:0"><label for="tel">Teléfono (WhatsApp)</label><input id="tel" name="tel" type="tel" inputmode="tel" autocomplete="tel" placeholder="0414 000 0000" required aria-describedby="h-tel e-tel"><span class="hint" id="h-tel">También te enviamos la entrada por WhatsApp.</span><span class="err" id="e-tel" role="alert">Escribe tu número con código, por ejemplo 0414 000 0000.</span></div>
+     <div class="field"><label for="nombre">Nombre y apellido</label><input id="nombre" name="nombre" autocomplete="name" maxlength="80" required aria-describedby="e-nombre"><span class="err" id="e-nombre" role="alert">Escribe tu nombre completo.</span></div>
+     <div class="field"><label for="correo">Correo</label><input id="correo" name="correo" type="email" inputmode="email" autocomplete="email" maxlength="120" required aria-describedby="h-correo e-correo"><span class="hint" id="h-correo">Aquí llegan tu entrada y tu factura.</span><span class="err" id="e-correo" role="alert">Escribe un correo válido, por ejemplo nombre@correo.com.</span></div>
+     <div class="field" style="margin-bottom:0"><label for="tel">Teléfono (WhatsApp)</label><input id="tel" name="tel" type="tel" inputmode="tel" autocomplete="tel" placeholder="0414 000 0000" maxlength="20" required aria-describedby="h-tel e-tel"><span class="hint" id="h-tel">También te enviamos la entrada por WhatsApp.</span><span class="err" id="e-tel" role="alert">Escribe tu número con código, por ejemplo 0414 000 0000.</span></div>
     </section>
 
     <section class="sheet" aria-labelledby="h-pago">
@@ -38,26 +38,26 @@
       <label class="opt"><input type="radio" name="m" value="pm"><span class="rd" aria-hidden="true"></span><span><strong>Pago Móvil</strong><br><span class="muted small">Pagas en Bs · confirmación al instante</span></span></label>
       <div class="mdetail" id="d-pm">
         <div class="field"><label for="pm-banco">Tu banco</label><select id="pm-banco"><option value="">Elige tu banco</option><option>Banco de ejemplo A (0000)</option><option>Banco de ejemplo B (0001)</option><option>Banco de ejemplo C (0002)</option></select></div>
-        <div class="fgrid c2"><div class="field"><label for="pm-ci">Cédula</label><input id="pm-ci" inputmode="numeric" placeholder="V-12345678"></div><div class="field"><label for="pm-tel">Teléfono del banco</label><input id="pm-tel" type="tel" inputmode="tel" placeholder="0414 000 0000"></div></div>
+        <div class="fgrid c2"><div class="field"><label for="pm-ci">Cédula</label><input id="pm-ci" autocomplete="off" maxlength="12" placeholder="V-12345678"></div><div class="field"><label for="pm-tel">Teléfono del banco</label><input id="pm-tel" type="tel" inputmode="tel" maxlength="20" placeholder="0414 000 0000"></div></div>
         <p class="small muted">Tu banco te enviará un código por SMS para autorizar el pago. Simulado en este prototipo.</p>
       </div>
       <label class="opt"><input type="radio" name="m" value="tj"><span class="rd" aria-hidden="true"></span><span><strong>Tarjeta</strong><br><span class="muted small">Débito o crédito · pagas en Bs · al instante</span></span></label>
       <div class="mdetail" id="d-tj">
-        <div class="field"><label for="tj-n">Número de tarjeta</label><input id="tj-n" inputmode="numeric" autocomplete="cc-number" placeholder="0000 0000 0000 0000"></div>
-        <div class="fgrid c2"><div class="field"><label for="tj-v">Vence</label><input id="tj-v" autocomplete="cc-exp" placeholder="MM/AA"></div><div class="field"><label for="tj-c">Código de seguridad</label><input id="tj-c" inputmode="numeric" autocomplete="cc-csc" placeholder="123"></div></div>
+        <div class="field"><label for="tj-n">Número de tarjeta</label><input id="tj-n" inputmode="numeric" autocomplete="cc-number" maxlength="23" placeholder="0000 0000 0000 0000"></div>
+        <div class="fgrid c2"><div class="field"><label for="tj-v">Vence</label><input id="tj-v" autocomplete="cc-exp" inputmode="numeric" maxlength="5" placeholder="MM/AA"></div><div class="field"><label for="tj-c">Código de seguridad</label><input id="tj-c" inputmode="numeric" autocomplete="cc-csc" maxlength="4" placeholder="123"></div></div>
         <p class="small muted">Simulado: no guardamos ni enviamos datos de tarjeta.</p>
       </div>
       <label class="opt"><input type="radio" name="m" value="zl"><span class="rd" aria-hidden="true"></span><span><strong>Zelle</strong><br><span class="muted small">Pagas en USD · lo verificamos (hasta 24 h, plazo de ejemplo)</span></span></label>
       <div class="mdetail" id="d-zl">
         <dl class="kv"><dt>Envía a</dt><dd>pagos@globalticket.example</dd><dt>Nombre</dt><dd>Global Ticket C.A. (ejemplo)</dd><dt>Monto exacto</dt><dd class="zmonto"></dd></dl>
-        <div class="field"><label for="zl-ref">Referencia de la transferencia</label><input id="zl-ref" placeholder="Ej.: ZL8842199"></div>
+        <div class="field"><label for="zl-ref">Referencia de la transferencia</label><input id="zl-ref" maxlength="40" placeholder="Ej.: ZL8842199"></div>
         <div class="field" style="margin-bottom:0"><label for="zl-file">Comprobante (captura o PDF)</label><input id="zl-file" type="file" accept="image/*,.pdf" aria-describedby="h-zf"><span class="hint" id="h-zf">Foto o captura donde se vea el monto y la referencia.</span></div>
       </div>
       <label class="opt"><input type="radio" name="m" value="us"><span class="rd" aria-hidden="true"></span><span><strong>USDT (Binance)</strong><br><span class="muted small">Pagas en USDT · lo verificamos (hasta 24 h, plazo de ejemplo)</span></span></label>
       <div class="mdetail" id="d-us">
         <dl class="kv"><dt>Red</dt><dd>TRON (TRC20)</dd><dt>Dirección</dt><dd>TEjemploDireccionUSDT000000000000 (ejemplo)</dd><dt>Monto exacto</dt><dd class="zmonto"></dd></dl>
         <p class="small muted" style="margin-bottom:12px">1 USDT se toma como 1 USD. No se usa la tasa P2P.</p>
-        <div class="field"><label for="us-ref">ID de la transacción (TxID) o referencia</label><input id="us-ref" placeholder="Pega aquí el TxID"></div>
+        <div class="field"><label for="us-ref">ID de la transacción (TxID) o referencia</label><input id="us-ref" maxlength="100" placeholder="Pega aquí el TxID"></div>
         <div class="field" style="margin-bottom:0"><label for="us-file">Comprobante (captura o PDF)</label><input id="us-file" type="file" accept="image/*,.pdf"></div>
       </div>
      </fieldset>
@@ -93,8 +93,9 @@
 <script>
 (function(){
   const {currentOrder,usd,bs,store,$,$$,esc,motion,fmt,RATE,startTimer,REFUND}=GT;
-  let o=currentOrder();
-  if(!o.count){ store.patch({qty:{gen:2}}); o=currentOrder(); } // demo: pedido de ejemplo si llegan directo
+  const o=currentOrder();
+  if(GT.bounce(o))return;
+  if(!o.count){location.replace("areas.html");return;} // sin entradas elegidas no hay nada que pagar
   $("#evt").textContent=o.ev.title; $("#evw").textContent=o.ses.city+" · "+o.ses.day;
   $("#lines").innerHTML=o.lines.map(l=>`<div class="ln"><span>${l.id==="hotel"?"":l.n+" × "}${esc(l.name)}</span><span>${usd(l.sub)}</span></div>`).join("")+`<div class="ln tax"><span>Impuestos (IVA/IGTF)</span><span>Por definir</span></div>`;
   $("#t-usd").textContent=usd(o.total); $("#t-ves").textContent=bs(o.totalBs)+" · tasa BCV";
@@ -112,27 +113,54 @@
     $("#pagas").innerHTML="<span>"+pagas+"</span>"; $("#pay").textContent=btn; $("#pay2").textContent=btn;
     $("#pb-usd").textContent=usd(o.total); $("#pb-ves").textContent=bs(o.totalBs)+" · tasa BCV";
   }
-  $("#method").addEventListener("change",()=>{
+  function showDetail(){
     $$(".mdetail").forEach(d=>d.classList.remove("on"));
-    const d=$("#d-"+method()); d.classList.add("on");
+    const d=$("#d-"+method()); if(d) d.classList.add("on");
+    return d;
+  }
+  // solo el cambio de método: los campos de detalle también están dentro del fieldset y disparan "change"
+  $("#method").addEventListener("change",e=>{
+    if(e.target.name!=="m")return;
+    const d=showDetail();
     $("#e-method").classList.remove("on"); $("#e-det").classList.remove("on"); label();
     motion(g=>g.from(d,{autoAlpha:0,y:-8,duration:.35,ease:"power3.out"}));
   });
+  // al volver con "atrás" el navegador restaura el radio marcado después de este script: sincronizar al cargar
+  showDetail(); addEventListener("pageshow",()=>{showDetail();label();});
+  $("#expired a").addEventListener("click",()=>store.patch({deadline:null})); // reserva nueva al volver a las entradas
   function bad(id,cond){const el=$("#"+id);el.setAttribute("aria-invalid",cond);const er=$("#e-"+id);if(er)er.classList.toggle("on",cond);return cond;}
+  const val=id=>$("#"+id).value.trim();
+  // teléfono venezolano: 0414…/0212… (11 dígitos) o +58… (12); se aceptan espacios, guiones, puntos y paréntesis
+  const phone=v=>/^\+?[\d\s().-]+$/.test(v)&&/^(0\d{10}|58\d{10})$/.test(v.replace(/\D/g,""));
+  // nombre: al menos dos palabras de letras (acentos, ñ, guion, apóstrofo recto o tipográfico)
+  const name=v=>/^\p{L}[\p{L}\p{M}'’.-]*(\s+\p{L}[\p{L}\p{M}'’.-]*)+$/u.test(v.normalize("NFC"));
+  const luhn=n=>{let t=0;[...n].reverse().forEach((c,i)=>{let d=+c;if(i%2){d*=2;if(d>9)d-=9;}t+=d;});return t%10===0;};
+  function expOk(v){const m=/^(\d{2})\s*\/?\s*(\d{2})$/.exec(v);if(!m||+m[1]<1||+m[1]>12)return false;return "20"+m[2]+"-"+m[1]>=GT.TODAY.slice(0,7);}
+  let sent=false;
   $("#form").addEventListener("submit",e=>{
-    e.preventDefault(); if(expired)return;
-    const errs=[bad("nombre",$("#nombre").value.trim().split(/\s+/).length<2),bad("correo",!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test($("#correo").value)),bad("tel",$("#tel").value.replace(/\D/g,"").length<10)];
-    const m=method(); let det=false;
+    e.preventDefault();
+    if(sent)return;
+    if(expired){$("#expired").scrollIntoView({block:"center"});$("#expired a").focus();return;}
+    $$(".mdetail [aria-invalid]").forEach(x=>x.removeAttribute("aria-invalid"));
+    const errs=[bad("nombre",!name(val("nombre"))),bad("correo",!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(val("correo"))),bad("tel",!phone(val("tel")))];
+    const m=method(); let det=[];
     $("#e-method").classList.toggle("on",!m);
-    if(m==="pm") det=!$("#pm-banco").value||$("#pm-ci").value.length<5||$("#pm-tel").value.replace(/\D/g,"").length<10;
-    if(m==="tj") det=$("#tj-n").value.replace(/\D/g,"").length<13||$("#tj-v").value.length<4||$("#tj-c").value.length<3;
-    if(m==="zl") det=!$("#zl-ref").value.trim()||!$("#zl-file").files.length;
-    if(m==="us") det=!$("#us-ref").value.trim()||!$("#us-file").files.length;
-    $("#e-det").classList.toggle("on",!!m&&det);
-    if(errs.some(Boolean)||!m||det){const f=$("[aria-invalid=true]")||$("#e-method.on")||$("#e-det.on");f.scrollIntoView({block:"center"});if(f.focus)f.focus();return;}
-    const code="GT-"+(48000+Math.floor(Math.random()*999));
-    store.patch({buyer:{nombre:$("#nombre").value.trim(),correo:$("#correo").value.trim(),tel:$("#tel").value.trim()},method:m,orderCode:code,rate:RATE});
-    location.href="confirmacion.html?estado="+((m==="zl"||m==="us")?"verificacion":"confirmada");
+    const chk=(id,ok)=>{if(!ok){det.push(id);bad(id,true);}};
+    if(m==="pm"){chk("pm-banco",!!$("#pm-banco").value);chk("pm-ci",/^[VE]?-?\d{6,9}$/i.test(val("pm-ci").replace(/[\s.]/g,"")));chk("pm-tel",phone(val("pm-tel")));}
+    if(m==="tj"){const n=val("tj-n").replace(/[\s-]/g,"");chk("tj-n",/^\d{13,19}$/.test(n)&&luhn(n));chk("tj-v",expOk(val("tj-v")));chk("tj-c",/^\d{3,4}$/.test(val("tj-c")));}
+    if(m==="zl"){chk("zl-ref",!!val("zl-ref"));chk("zl-file",$("#zl-file").files.length>0);}
+    if(m==="us"){chk("us-ref",!!val("us-ref"));chk("us-file",$("#us-file").files.length>0);}
+    $("#e-det").classList.toggle("on",det.length>0);
+    if(errs.some(Boolean)||!m||det.length){const f=$("[aria-invalid=true]")||$("input[name=m]");f.scrollIntoView({block:"center"});f.focus();return;}
+    sent=true; $$("#pay,#pay2").forEach(b=>b.disabled=true);
+    // código único en la sesión y fuera del rango de los datos de ejemplo (48xxx)
+    const seq=(store.get().seq||0)+1, code="GT-"+(61000+seq*7+Math.floor(Math.random()*7));
+    const estado=(m==="zl"||m==="us")?"verificacion":"confirmada", buyer={nombre:val("nombre"),correo:val("correo"),tel:val("tel")};
+    // la orden pagada queda congelada (líneas, total, tasa, sede) y la reserva se limpia: volver atrás no cobra dos veces
+    const S=o.ses, paid={eventId:o.ev.id,sessionId:S.id,ses:{city:S.city,day:S.day,doors:S.doors,start:S.start,venue:S.venue},lines:o.lines,total:o.total,count:o.count,buyer,method:m,orderCode:code,rate:RATE,estado};
+    const prev=store.get().orders;
+    store.patch({buyer,paid,seq,orders:[paid].concat(Array.isArray(prev)?prev:[]).slice(0,10),qty:{},hotel:false,deadline:null});
+    location.replace("confirmacion.html?estado="+estado);
   });
   label();
   motion(g=>g.from(".sheet",{y:22,autoAlpha:0,duration:.55,ease:"power3.out",stagger:.1,clearProps:"all"}));

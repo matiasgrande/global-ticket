@@ -6,10 +6,12 @@
 
   /* ---------- formato ---------- */
   function fmt(n, d) {
-    const s = Math.abs(n).toFixed(d);
+    // toLocaleString en vez de toFixed: toFixed pasa a notación exponencial desde 1e21
+    const s = Math.abs(n).toLocaleString("en-US", { useGrouping: false, minimumFractionDigits: d, maximumFractionDigits: d });
+    const neg = n < 0 && /[1-9]/.test(s); // -0,004 no es "-0,00"
     const [i, f] = s.split(".");
     const g = i.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-    return (n < 0 ? "-" : "") + g + (f ? "," + f : "");
+    return (neg ? "-" : "") + g + (f ? "," + f : "");
   }
   const usd = (n) => "USD " + (Number.isInteger(n) ? fmt(n, 0) : fmt(n, 2));
   const bs = (n) => "Bs " + fmt(n, 2);
@@ -178,26 +180,68 @@
   const minPrice = (s) => { const a = s.areas.filter((x) => x.left > 0).map((x) => x.usd); return a.length ? Math.min(...a) : null; };
   const evMin = (e) => { const p = e.sessions.filter((s) => !s.soldOut).map(minPrice).filter((x) => x != null); return p.length ? Math.min(...p) : null; };
   const evFirst = (e) => e.sessions.slice().sort((a, b) => a.date.localeCompare(b.date))[0];
+  // aforo de ejemplo por área (mismo orden que session.areas), compartido por el resumen y el editor del panel
+  const CAPS = { gala: [600, 40, 80], salsa: [500, 24, 120], bolero: [140, 20, 40], fullday: [300, 12, 120], canaima: [30, 8, 12], manglar: [250, 20, 60] };
+  const TODAY = "2026-10-10"; // "hoy" del prototipo
+  /* cola de verificación del panel: estado por orden, compartido entre pantallas del panel */
+  const VKEY = "gt-verif", VIDS = ["GT-48213", "GT-48219", "GT-48226", "GT-48231", "GT-48240", "GT-48244"];
+  const verif = {
+    // solo ids de la cola y estados conocidos; lo demás cuenta como pendiente
+    get() { let o = {}; try { o = JSON.parse(sessionStorage.getItem(VKEY)) || {}; } catch (e) {} const r = {}; VIDS.forEach((id) => { if (o && (o[id] === "ok" || o[id] === "no")) r[id] = o[id]; }); return r; },
+    set(o) { try { sessionStorage.setItem(VKEY, JSON.stringify(o)); } catch (e) {} },
+    pending() { return VIDS.length - Object.keys(verif.get()).length; },
+  };
   const getEvent = (id) => EVENTS.find((e) => e.id === id) || EVENTS[0];
 
   /* ---------- estado de la orden (sessionStorage) ---------- */
-  const KEY = "gt-orden";
+  const KEY = "gt-orden", MAX_ORDER = 6;
+  let mem = {};
   const store = {
-    get() { try { return JSON.parse(sessionStorage.getItem(KEY)) || {}; } catch (e) { return {}; } },
-    set(o) { try { sessionStorage.setItem(KEY, JSON.stringify(o)); } catch (e) { /* sin storage: el prototipo sigue con valores por defecto */ } },
+    // sin sessionStorage (bloqueado o lleno) la orden vive en memoria: la página funciona, pero no pasa a la siguiente
+    get() { try { const v = JSON.parse(sessionStorage.getItem(KEY)); return v && typeof v === "object" && !Array.isArray(v) ? v : {}; } catch (e) { return JSON.parse(JSON.stringify(mem)); } },
+    set(o) { mem = o; try { sessionStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} },
+    ok: (() => { try { sessionStorage.setItem("gt-t", "1"); sessionStorage.removeItem("gt-t"); return true; } catch (e) { return false; } })(),
     patch(p) { const o = Object.assign(store.get(), p); store.set(o); return o; },
     clear() { try { sessionStorage.removeItem(KEY); } catch (e) {} },
   };
-  function currentOrder() {
-    const o = store.get();
-    const ev = getEvent(o.eventId);
-    const ses = ev.sessions.find((s) => s.id === o.sessionId) || ev.sessions.find((s) => !s.soldOut);
-    const qty = o.qty || {};
-    const lines = ses.areas.filter((a) => qty[a.id] > 0).map((a) => ({ id: a.id, name: a.name, n: qty[a.id], unit: a.usd, sub: a.usd * qty[a.id] }));
-    if (o.hotel) lines.push({ id: "hotel", name: "Una noche en Tibisay " + ses.city, n: 1, unit: ses.hotel, sub: ses.hotel });
-    const total = lines.reduce((t, l) => t + l.sub, 0);
+  /* Orden saneada. Solo eventos propios y sesiones a la venta; las cantidades valen únicamente para la
+     sesión en que se eligieron (qtyFor) y se recortan a lo disponible y al máximo por orden.
+     bad: no hay nada que comprar (evento ajeno, agotado o inexistente). */
+  function currentOrder(src) {
+    const o = src || store.get();
+    const id = o.eventId || EVENTS[0].id;
+    const ev = EVENTS.find((e) => e.id === id && !e.src);
+    const ses = ev && (ev.sessions.find((s) => s.id === o.sessionId && !s.soldOut) || ev.sessions.find((s) => !s.soldOut));
+    if (!ses) return { bad: true, o, ev: EVENTS.find((e) => e.id === id) || null };
+    const key = ev.id + "/" + ses.id, mine = o.qtyFor === key, raw = mine && o.qty ? o.qty : {};
+    let room = MAX_ORDER;
+    const qty = {};
+    ses.areas.forEach((a) => { const n = Math.max(0, Math.min(Math.floor(+raw[a.id]) || 0, a.left, room)); if (n) { qty[a.id] = n; room -= n; } });
+    const hotel = !!(mine && o.hotel && ses.hotel);
+    const lines = ses.areas.filter((a) => qty[a.id]).map((a) => ({ id: a.id, name: a.name, n: qty[a.id], unit: a.usd, sub: a.usd * qty[a.id] }));
+    if (hotel) lines.push({ id: "hotel", name: "Una noche en Tibisay " + ses.city, n: 1, unit: ses.hotel, sub: ses.hotel });
+    const total = Math.round(lines.reduce((t, l) => t + l.sub, 0) * 100) / 100;
     const count = lines.filter((l) => l.id !== "hotel").reduce((t, l) => t + l.n, 0);
-    return { o, ev, ses, lines, total, count, totalBs: toBs(total) };
+    return { o, ev, ses, key, qty, hotel, lines, total, count, totalBs: toBs(total) };
+  }
+  /* orden ya pagada: se muestra tal como se congeló en checkout (no contra el inventario de hoy).
+     null si el objeto guardado no tiene la forma esperada. */
+  function paidOrder(p) {
+    if (!p || typeof p !== "object" || !Array.isArray(p.lines) || !p.ses || typeof p.ses !== "object" || !p.buyer || typeof p.orderCode !== "string") return null;
+    const ev = EVENTS.find((e) => e.id === p.eventId && !e.src);
+    if (!ev) return null;
+    const lines = p.lines.filter((l) => l && typeof l.name === "string" && Number.isFinite(+l.n) && +l.n > 0 && Number.isFinite(+l.sub)).map((l) => ({ id: String(l.id), name: l.name, n: +l.n, sub: +l.sub }));
+    const total = Math.round(lines.reduce((t, l) => t + l.sub, 0) * 100) / 100;
+    const count = lines.filter((l) => l.id !== "hotel").reduce((t, l) => t + l.n, 0);
+    if (!count) return null;
+    const S = p.ses, str = (v) => (typeof v === "string" ? v : "");
+    return { ev, ses: { city: str(S.city), day: str(S.day), doors: str(S.doors), start: str(S.start), venue: str(S.venue) }, lines, total, count, totalBs: toBs(total), p };
+  }
+  // páginas de compra: sin orden válida, de vuelta a la ficha del evento (o al inicio)
+  function bounce(ord) {
+    if (!ord.bad) return false;
+    location.replace(ord.ev ? "evento.html?e=" + encodeURIComponent(ord.ev.id) : "index.html");
+    return true;
   }
 
   /* ---------- UI helpers ---------- */
@@ -212,6 +256,7 @@
   }
 
   function toast(msg) {
+    $$(".toast").forEach((x) => x.remove()); // uno a la vez: si no, se apilan en el mismo lugar
     const t = document.createElement("div");
     t.className = "toast"; t.setAttribute("role", "status"); t.textContent = msg;
     document.body.appendChild(t);
@@ -241,7 +286,7 @@
     const nav = b.dataset.nav || "";
     if (b.classList.contains("panel")) {
       const link = (h, t, extra) => `<a href="${h}"${nav === h ? ' aria-current="page"' : ""}>${t}${extra || ""}</a>`;
-      b.insertAdjacentHTML("afterbegin", `<a class="skip" href="#main">Saltar al contenido</a><aside class="pn-side"><a class="logo" href="panel-resumen.html">${LOGO}<span>Global Ticket</span></a><nav aria-label="Panel del organizador">${link("panel-resumen.html", "Resumen")}${link("panel-verificacion.html", "Verificación", ' <span class="badge" id="qbadge">6</span>')}${link("panel-evento.html", "Crear evento")}<a href="index.html">Ver tienda</a></nav><p class="who">Taquilla Tibisay · rol admin<br>Datos de ejemplo</p></aside>`);
+      b.insertAdjacentHTML("afterbegin", `<a class="skip" href="#main">Saltar al contenido</a><aside class="pn-side"><a class="logo" href="panel-resumen.html">${LOGO}<span>Global Ticket</span></a><nav aria-label="Panel del organizador">${link("panel-resumen.html", "Resumen")}${link("panel-verificacion.html", "Verificación", ` <span class="badge" id="qbadge">${verif.pending()}</span>`)}${link("panel-evento.html", "Crear evento")}<a href="index.html">Ver tienda</a></nav><p class="who">Taquilla Tibisay · rol admin<br>Datos de ejemplo</p></aside>`);
       return;
     }
     b.insertAdjacentHTML("afterbegin", `<a class="skip" href="#main">Saltar al contenido</a><div class="rate-bar" role="note">Tasa BCV del día: <b>${fmt(RATE, 2)} Bs/USD</b> · tasa de ejemplo</div><header class="site-header"><a class="logo" href="index.html" aria-label="Global Ticket, inicio">${LOGO}<span>Global Ticket</span></a><a class="hdr-link" href="mis-entradas.html">Mis entradas</a></header>`);
@@ -253,7 +298,9 @@
   function startTimer(el, onExpire) {
     const o = store.get();
     let dl = o.deadline;
-    if (!dl || dl < Date.now() - 1) { dl = Date.now() + 10 * 60 * 1000; store.patch({ deadline: dl }); }
+    // una reserva vencida sigue vencida al recargar; solo "reservar de nuevo" (reset) o volver a la ficha la renueva
+    // y un valor corrupto (no numérico, o más allá de 10 min) cuenta como sin reserva
+    if (!(typeof dl === "number" && dl > 0 && dl <= Date.now() + 600000)) { dl = Date.now() + 10 * 60 * 1000; store.patch({ deadline: dl }); }
     const t = $(".t", el), bar = $(".bar2", el);
     let said2 = false;
     const live = $(".tlive", el);
@@ -266,8 +313,8 @@
       if (left < 120000 && !said2 && live) { said2 = true; live.textContent = "Quedan menos de 2 minutos de tu reserva."; }
       if (left === 0) { clearInterval(iv); if (live) live.textContent = "Tu reserva venció."; onExpire && onExpire(); }
     }
-    const iv = setInterval(tick, 1000); tick();
-    return { reset() { dl = Date.now() + 600000; store.patch({ deadline: dl }); said2 = false; } };
+    let iv = setInterval(tick, 1000); tick();
+    return { reset() { clearInterval(iv); dl = Date.now() + 600000; store.patch({ deadline: dl }); said2 = false; if (live) live.textContent = "Reservamos tus entradas otros 10 minutos."; iv = setInterval(tick, 1000); tick(); } };
   }
 
   /* ---------- QR de EJEMPLO (no escaneable) ---------- */
@@ -311,6 +358,6 @@
     }));
   }
 
-  window.GT = { TAXLINE, countTo, waitlistForm, bindWaitlist, RATE, P2P_REF, fmt, usd, bs, toBs, EVENTS, REFUND, minPrice, evMin, evFirst, getEvent, store, currentOrder, $, $$, esc, motion, toast, artHTML, startTimer, qrSVG, LOGO };
+  window.GT = { paidOrder, MAX_ORDER, bounce, CAPS, TODAY, verif, TAXLINE, countTo, waitlistForm, bindWaitlist, RATE, P2P_REF, fmt, usd, bs, toBs, EVENTS, REFUND, minPrice, evMin, evFirst, getEvent, store, currentOrder, $, $$, esc, motion, toast, artHTML, startTimer, qrSVG, LOGO };
   document.addEventListener("DOMContentLoaded", chrome);
 })();

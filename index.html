@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="color-scheme" content="dark light">
-<title>Global Ticket · Entradas con el precio completo</title>
+<meta name="color-scheme" content="dark">
+<title>Global Ticket · Entradas en dólares y bolívares</title>
 <meta name="description" content="Entradas para conciertos, galas, comedia y música en vivo en Venezuela. Precio en dólares y bolívares a tasa BCV.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap">
@@ -14,7 +14,7 @@
 <body data-nav="index.html">
 <main id="main">
   <div class="wrap">
-    <section class="feat" id="feat" aria-label="Destacado: gira de comedia">
+    <section class="feat" id="feat" aria-label="Evento destacado">
       <div class="feat-hero">
         <div id="feat-ph"></div>
         <div class="over">
@@ -27,7 +27,7 @@
           </div>
         </div>
       </div>
-      <div class="feat-dates" id="feat-dates" role="list" aria-label="Fechas de la gira"></div>
+      <div class="feat-dates" id="feat-dates" role="list" aria-label="Fechas y sedes"></div>
     </section>
 
     <section class="filters" aria-label="Filtrar eventos">
@@ -42,7 +42,7 @@
     <div class="sec-h"><h2>Todos los eventos</h2></div>
     <div class="sel2">
       <div class="field"><label class="sr" for="f-cat">Categoría</label>
-        <select id="f-cat"><option value="">Categorías</option></select></div>
+        <select id="f-cat"><option value="">Todas las categorías</option></select></div>
       <div class="field"><label class="sr" for="f-date">Fecha</label>
         <select id="f-date"><option value="">Cualquier fecha</option></select></div>
     </div>
@@ -84,14 +84,16 @@
   const h=EVENTS[0], hf=evFirst(h), hm=evMin(h);
   $("#feat-ph").innerHTML=artHTML(h,"flat");
   $("#feat-tags").innerHTML=`<span class="tag solid">${nSes(h)}</span><span class="tag solid">${esc(h.cat)}</span>`;
+  $("#feat").setAttribute("aria-label","Destacado: "+h.title); $("#feat-dates").setAttribute("aria-label","Fechas y sedes de "+h.title);
   $("#feat-t").textContent=h.title; $("#feat-go").href="evento.html?e="+h.id;
   $("#feat-m").textContent=hf.city+" · "+hf.day+" · "+hf.start;
   $("#feat-usd").textContent="Desde "+usd(hm); $("#feat-ves").textContent=bs(toBs(hm))+" · tasa BCV";
-  $("#feat-dates").innerHTML=h.sessions.map(s=>{const d=new Date(s.date+"T12:00:00"),m=GT.minPrice(s);const inner=`<span class="dtb"><b>${d.getDate()}</b><span>${MES[d.getMonth()]}</span></span><span><span class="nm">${esc(s.city)}</span><span class="muted small">${esc(s.day)} · ${esc(s.start)}</span></span><span class="st">${s.soldOut?'<span class="tag danger">Agotado</span>':`<span class="usd">${usd(m)}</span><span class="bsv">${bs(toBs(m))}</span>`}</span>`;return s.soldOut?`<div class="drow off" role="listitem">${inner}</div>`:`<a class="drow" role="listitem" href="evento.html?e=${h.id}&s=${s.id}">${inner}</a>`}).join("");
+  $("#feat-dates").innerHTML=h.sessions.map(s=>{const d=new Date(s.date+"T12:00:00"),m=GT.minPrice(s);const inner=`<span class="dtb"><b>${d.getDate()}</b><span>${MES[d.getMonth()]}</span></span><span><span class="nm">${esc(s.city)}</span><span class="muted small">${esc(s.day)} · ${esc(s.start)}</span></span><span class="st">${s.soldOut?'<span class="tag danger">Agotado</span>':`<span class="usd">${usd(m)}</span><span class="bsv">${bs(toBs(m))}</span>`}</span>`;return `<div role="listitem">${s.soldOut?`<div class="drow off">${inner}</div>`:`<a class="drow" href="evento.html?e=${h.id}&s=${s.id}">${inner}</a>`}</div>`}).join("");
 
   // esta semana: proximos 7 dias desde hoy (sáb 10 oct 2026, fecha del prototipo)
-  const TODAY=new Date("2026-10-10T00:00:00"), LIM=new Date(TODAY.getTime()+7*86400000);
-  const wk=[]; EVENTS.forEach(e=>e.sessions.forEach(s=>{const d=new Date(s.date+"T12:00:00");if(d>=TODAY&&d<=LIM&&!s.soldOut)wk.push({e,s});}));
+  // fechas como texto YYYY-MM-DD: sin horas ni husos que corran el borde de la semana
+  const LIM=new Date(new Date(GT.TODAY+"T12:00:00").getTime()+7*86400000).toISOString().slice(0,10);
+  const wk=[]; EVENTS.forEach(e=>e.sessions.forEach(s=>{if(s.date>=GT.TODAY&&s.date<=LIM&&!s.soldOut&&GT.minPrice(s)!=null)wk.push({e,s});}));
   wk.sort((a,b)=>a.s.date.localeCompare(b.s.date));
   if(wk.length){ $("#wk-sec").hidden=false; $("#wk").innerHTML=wk.map(({e,s})=>`<article class="wk">${artHTML(e)}<div class="over"><h3><a href="evento.html?e=${e.id}&s=${s.id}">${esc(e.title.split(":")[0])}</a></h3><p class="when">${esc(s.day)} · ${esc(s.city)} · ${usd(GT.minPrice(s))}</p></div></article>`).join(""); }
 
@@ -102,7 +104,7 @@
     const low=live.some(s=>s.areas.some(a=>a.left>0&&a.left<=9));
     const cities=uniq(e.sessions.map(s=>s.city)).join(" · ");
     return `<article class="ev" data-id="${e.id}">
-      ${artHTML(e,"",`<div class="tags">${e.sessions.length>1?`<span class="tag solid">${nSes(e)}</span>`:""}${low?'<span class="tag solid">Últimas entradas</span>':""}</div>`)}
+      ${artHTML(e,"",`<div class="tags">${e.sessions.length>1?`<span class="tag solid">${nSes(e)}</span>`:""}${low?'<span class="tag solid">Últimas entradas</span>':""}${e.src?`<span class="tag solid">Venta en ${esc(e.src.name)}</span>`:""}</div>`)}
       <div class="tx">
         <h3><a href="evento.html?e=${e.id}">${esc(e.title)}</a></h3>
         <p class="when">${e.sessions.length>1?"Desde el ":""}${esc(f.day)} · ${esc(e.sessions.length>1?cities:f.city)}</p>
@@ -115,21 +117,24 @@
   const cols=()=>matchMedia("(min-width:1040px)").matches?4:matchMedia("(min-width:760px)").matches?3:2;
   function apply(){
     const mo=$("#f-date").value, vis=new Set(EVENTS.filter(e=>(!cat||e.cat===cat)&&e.sessions.some(s=>(!city||s.city===city)&&(!mo||s.date.slice(5,7)===mo))).map(e=>e.id));
-    cards.forEach(c=>{c.style.display=vis.has(c.dataset.id)?"":"none";c.classList.remove("wide");c.style.gridColumn="";});
+    cards.forEach(c=>{c.style.display=vis.has(c.dataset.id)?"":"none";c.classList.remove("wide");c.style.removeProperty("--span");});
     const shown=cards.filter(c=>vis.has(c.dataset.id)), n=shown.length, k=cols();
     const span=k-((n-1)%k);
-    if(n>1&&span>1){const l=shown[n-1];l.classList.add("wide");l.style.gridColumn="span "+span;}
+    // el ancho va en una variable CSS: Flip (absolute) limpia grid-area/grid-column inline al terminar
+    if(n>1&&span>1){const l=shown[n-1];l.classList.add("wide");l.style.setProperty("--span",span);}
     $("#empty").hidden=n>0;
     $("#count").textContent=n+(n===1?" evento":" eventos")+" · precio por entrada, con su equivalente en Bs a tasa BCV";
   }
   let first=true;
   function render(){
     const rm=matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if(first||rm||!window.Flip){ apply(); if(first&&!rm&&window.gsap) motion(g=>g.from("#grid .ev",{y:20,autoAlpha:0,duration:.55,ease:"power3.out",stagger:.06,clearProps:"all"})); first=false; return; }
+    if(first||rm||!window.Flip){ apply(); if(first&&!rm&&window.gsap) motion(g=>g.from("#grid .ev",{y:20,autoAlpha:0,duration:.55,ease:"power3.out",stagger:.06,clearProps:"transform,opacity,visibility"})); first=false; return; }
+    // filtrar durante la entrada: cortar el intro y dejar las tarjetas en su estado final antes de medir
+    gsap.killTweensOf(cards); gsap.set(cards,{clearProps:"transform,opacity,visibility"});
     const st=Flip.getState(cards);
     apply();
     Flip.from(st,{duration:.5,ease:"power3.inOut",absolute:true,scale:false,nested:false,
-      onEnter:els=>gsap.fromTo(els,{autoAlpha:0,scale:.92},{autoAlpha:1,scale:1,duration:.4,ease:"power3.out",clearProps:"all"}),
+      onEnter:els=>gsap.fromTo(els,{autoAlpha:0,scale:.92},{autoAlpha:1,scale:1,duration:.4,ease:"power3.out",clearProps:"transform,opacity,visibility"}),
       onLeave:els=>gsap.to(els,{autoAlpha:0,scale:.92,duration:.25,ease:"power2.in"})});
   }
   $("#cities").addEventListener("click",e=>{const b=e.target.closest(".chip");if(!b)return;const chips=$$(".chip",$("#cities"));chips.forEach(x=>x.setAttribute("aria-pressed",x===b));const i=chips.indexOf(b);city=i===0?"":b.textContent;render();});

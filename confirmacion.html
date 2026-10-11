@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="color-scheme" content="dark light">
+<meta name="color-scheme" content="dark">
 <title>Tu compra · Global Ticket</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap">
@@ -13,7 +13,7 @@
 <body data-nav="confirmacion.html">
 <main id="main">
  <div class="wrap narrow">
-  <nav class="demo-switch" aria-label="Estado de la compra (solo prototipo)"><span>Ver estado:</span><a href="?estado=confirmada" data-s="confirmada">Confirmada</a><a href="?estado=verificacion" data-s="verificacion">En verificación</a><a href="?estado=rechazada" data-s="rechazada">Rechazada</a></nav>
+  <nav class="demo-switch" aria-label="Estado de la compra (solo prototipo)"><span>Ver estado:</span><a href="?estado=confirmada&amp;demo=1" data-s="confirmada">Confirmada</a><a href="?estado=verificacion&amp;demo=1" data-s="verificacion">En verificación</a><a href="?estado=rechazada&amp;demo=1" data-s="rechazada">Rechazada</a></nav>
   <section class="conf-head" aria-live="polite">
     <span class="sico" id="sico"><svg viewBox="0 0 24 24" aria-hidden="true" id="sv"></svg></span>
     <h1 id="h1"></h1>
@@ -62,29 +62,37 @@
 <script>
 (function(){
   const {currentOrder,usd,bs,toBs,store,$,$$,esc,motion,fmt,RATE,qrSVG,toast,artHTML}=GT;
-  const st=new URLSearchParams(location.search).get("estado")||"confirmada";
+  // la orden pagada en checkout; si se llega directo (pantalla de demo), una orden de ejemplo coherente
+  // el selector de estado (solo prototipo) siempre muestra la orden de ejemplo, nunca reescribe una compra real
+  const d0=currentOrder({eventId:"gala",sessionId:"mgta",qtyFor:"gala/mgta",qty:{gen:2}});
+  const DEMO={eventId:"gala",ses:d0.ses,lines:d0.lines,buyer:{nombre:"Marisol Contreras",correo:"marisol@correo.example",tel:"0414 000 0000"},orderCode:"GT-40001"};
+  const qs=new URLSearchParams(location.search);
+  let o=qs.get("demo")?null:GT.paidOrder(store.get().paid), demo=!o;
+  if(demo) o=GT.paidOrder(DEMO);
+  const paid=o.p;
+  if(demo) $(".demo-switch").insertAdjacentHTML("afterend",'<p class="callout info" style="margin-bottom:16px">Orden de ejemplo: así se ve esta pantalla. Tus compras de esta sesión aparecen aquí y en «Mis entradas».</p>');
+  const ST=["confirmada","verificacion","rechazada"], qst=qs.get("estado");
+  const st=demo?(ST.includes(qst)?qst:"confirmada"):(ST.includes(paid.estado)?paid.estado:"confirmada"); // una compra real muestra su propio estado
   $$(".demo-switch a").forEach(a=>{if(a.dataset.s===st)a.setAttribute("aria-current","true");});
-  let o=currentOrder();
-  if(!o.count){ const q={}; q[o.ses.areas[0].id]=2; store.patch({qty:q}); o=currentOrder(); }
-  const b=store.get().buyer||{nombre:"Marisol Contreras",correo:"marisol@correo.example",tel:"0414 000 0000"};
-  const sm=store.get().method;
+  const b=paid.buyer||DEMO.buyer;
+  const sm=paid.method;
   const m=st==="confirmada"?((sm==="pm"||sm==="tj")?sm:"pm"):((sm==="zl"||sm==="us")?sm:"zl");
-  const code=store.get().orderCode||"GT-48213";
-  const serial="N° "+code.replace("GT-","")+"-01";
+  const code=paid.orderCode, rate=RATE;
+  const tickets=o.lines.filter(l=>l.id!=="hotel");
+  const serial="N° "+code.replace("GT-","")+"-01"+(o.count>1?" a -"+String(o.count).padStart(2,"0"):"");
   const MN={pm:"Pago Móvil",tj:"Tarjeta",zl:"Zelle",us:"USDT (Binance)"};
-  const ticketLine=o.lines.find(l=>l.id!=="hotel");
   $("#p-ph").innerHTML=artHTML(o.ev,"r1610");
   $("#p-cat").textContent=o.ev.cat+" · "+o.ev.tag;
   $("#p-title").textContent=o.ev.title;
-  $("#p-date").textContent=o.ses.day+" 2026"; $("#p-doors").textContent=o.ses.doors;
-  $("#p-venue").textContent=o.ses.venue; $("#p-area").textContent=ticketLine.name+" × "+ticketLine.n; $("#p-name").textContent=b.nombre;
+  $("#p-date").textContent=o.ses.day+" 2026"; $("#p-doors").textContent=o.ses.doors||o.ses.start;
+  $("#p-venue").textContent=o.ses.venue; $("#p-area").textContent=tickets.map(l=>l.name+" × "+l.n).join(", "); $("#p-name").textContent=b.nombre;
   $("#ocode").textContent="· "+code;
   $("#lines").innerHTML=o.lines.map(l=>`<div class="ln"><span>${l.id==="hotel"?"":l.n+" × "}${esc(l.name)}</span><span>${usd(l.sub)}</span></div>`).join("")+`<div class="ln tax"><span>Impuestos (IVA/IGTF)</span><span>Por definir</span></div>`;
   $("#t-usd").textContent=usd(o.total);
   const inBs=(m==="pm"||m==="tj");
   $("#t-lbl").textContent=inBs?"Pagado en bolívares":"Equivalente en bolívares";
   $("#t-ves").textContent=bs(o.totalBs);
-  $("#rate").innerHTML="Tasa BCV del día: <b>"+fmt(RATE,2)+" Bs/USD</b> · ejemplo";
+  $("#rate").innerHTML="Tasa BCV de tu orden: <b>"+fmt(rate,2)+" Bs/USD</b> · ejemplo";
   const when=new Date(Date.now()+24*3600*1000);
   const wtxt=new Intl.DateTimeFormat("es-VE",{weekday:"long",day:"numeric",month:"long",hour:"numeric",minute:"2-digit"}).format(when);
   const SV={ok:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',pending:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',danger:'<path d="M7 7l10 10M17 7L7 17"/>'};
@@ -96,7 +104,7 @@
     $("#h1").textContent="Entrada confirmada";
     $("#lede").textContent="Pagaste con "+MN[m]+". Tu QR ya está activo: muéstralo en la puerta desde el teléfono.";
     $("#qrbox").innerHTML='<div class="qr" id="qr">'+qrSVG(serial)+'</div>'; $("#serial").textContent=serial;
-    $("#qrnote").textContent="QR de ejemplo, no escaneable. En producción va firmado y atado a esta compra.";
+    $("#qrnote").textContent=(o.count>1?"Cada una de tus "+o.count+" entradas tiene su propio QR en «Mis entradas». ":"")+"QR de ejemplo, no escaneable. En producción va firmado y atado a esta compra.";
     $("#h-next").textContent="Ya la enviamos";
     ds.innerHTML=li("✓","Por correo",esc(b.correo)+" · entrada con QR y PDF")+li("✓","Por WhatsApp",esc(b.tel)+" · enlace a tu entrada")+li("✓","Factura por correo","Llega al mismo correo, como en cualquier compra en línea.")+li("✓","En «Mis entradas»","Con el enlace del correo la abres sin contraseña, aun sin señal si ya la guardaste.");
   } else if(st==="verificacion"){

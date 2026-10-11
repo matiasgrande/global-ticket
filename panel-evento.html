@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="color-scheme" content="dark light">
+<meta name="color-scheme" content="light">
 <title>Crear evento · Panel Global Ticket</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap">
@@ -21,14 +21,14 @@
   <section class="card" aria-labelledby="h1">
     <h2 id="h1">Datos del evento</h2>
     <div class="fgrid c2">
-      <div class="field"><label for="n">Nombre del evento</label><input id="n" value="Noches de Bolero"><span class="err" id="e-n" role="alert">El evento necesita un nombre.</span></div>
-      <div class="field"><label for="c">Categoría</label><select id="c"><option>Conciertos</option><option>Fiestas y galas</option><option>Comedia</option><option selected>Música en vivo</option><option>Experiencias</option></select></div>
+      <div class="field"><label for="n">Nombre del evento</label><input id="n" value="Noches de Bolero" maxlength="90" aria-describedby="e-n"><span class="err" id="e-n" role="alert">El evento necesita un nombre.</span></div>
+      <div class="field"><label for="c">Categoría</label><select id="c"></select></div>
     </div>
-    <div class="field"><label for="d">Descripción (la ves en la ficha)</label><textarea id="d">Un trío de boleros y una voz invitada recorren los salones Tibisay: cena ligera, coctelería y dos sets de clásicos. Artistas por anunciar (ejemplo).</textarea></div>
+    <div class="field"><label for="d">Descripción (la ves en la ficha)</label><textarea id="d" maxlength="1200">Un trío de boleros y una voz invitada recorren los salones Tibisay: cena ligera, coctelería y dos sets de clásicos. Artistas por anunciar (ejemplo).</textarea></div>
     <div class="fgrid c3">
       <div class="field"><label for="a">Edad mínima</label><select id="a"><option>Todo público</option><option>+14</option><option>+16</option><option selected>+18</option></select></div>
       <div class="field"><label for="r">Política de reembolso</label><select id="r"><option selected>Cancelación: 100% en misma moneda y tasa (ejemplo)</option><option>Cancelación o lluvia: 100% en misma moneda y tasa (ejemplo)</option></select><span class="hint">Se muestra al comprador antes de pagar.</span></div>
-      <div class="field"><label for="img">Arte del evento</label><input id="img" type="file" accept="image/*" style="padding:10px 14px;min-height:56px"><span class="hint">Foto 4:3, mínimo 1200 px de ancho.</span></div>
+      <div class="field"><label for="img">Arte del evento</label><input id="img" type="file" accept="image/jpeg,image/png,image/webp" aria-describedby="h-img" style="padding:10px 14px;min-height:56px"><span class="hint" id="h-img">Foto 4:3, mínimo 1200 px de ancho. JPG, PNG o WebP.</span></div>
     </div>
   </section>
 
@@ -40,57 +40,74 @@
   <section class="card" aria-labelledby="h3">
     <h2 id="h3">Paquete con habitación <span class="small">Opcional</span></h2>
     <label class="switch"><input type="checkbox" id="pk" checked><span>Ofrecer «una noche en Tibisay» junto a la entrada</span></label>
-    <div class="fgrid c2" id="pkf" style="margin-top:10px"><div class="field"><label for="pkp">Precio de la noche (USD, ejemplo)</label><input id="pkp" type="number" min="0" value="68" inputmode="decimal"></div><div class="field"><label for="pkn">Descripción</label><input id="pkn" value="Habitación doble con desayuno (ejemplo)"></div></div>
+    <div class="fgrid c2" id="pkf" style="margin-top:10px"><div class="field"><label for="pkp">Precio de la noche (USD, ejemplo)</label><input id="pkp" type="number" min="1" max="5000" value="85" inputmode="decimal"></div><div class="field"><label for="pkn">Descripción</label><input id="pkn" value="Habitación doble con desayuno (ejemplo)" maxlength="120"></div></div>
   </section>
   <p class="small muted">Las áreas son zonas con aforo, no asientos numerados. Cada sede define las suyas.</p>
   </form>
-  <div class="totals" id="tot" aria-live="polite"></div>
+  <div class="totals" id="tot"></div>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js" integrity="sha384-HOvlOYPIs/zjoIkWUGXkVmXsjr8GuZLV+Q+rcPwmJOVZVpvTSXQChiN4t9Euv9Vc" crossorigin="anonymous"></script>
 <script src="js/app.js"></script>
 <script>
 (function(){
   const {usd,bs,toBs,fmt,RATE,$,$$,esc,motion,toast}=GT;
-  const CITIES=["Margarita","Maracaibo","Maturín","Mérida"];
-  const SEDE0=[
-    {city:"Mérida",venue:"Tibisay Mérida · Salón Sierra Nevada",date:"2026-10-24",doors:"19:30",start:"20:30",areas:[["General",110,25],["Mesa frontal",20,55],["Barra alta",40,35]]},
-    {city:"Maracaibo",venue:"Tibisay Maracaibo · Salón Urdaneta",date:"2026-11-13",doors:"19:30",start:"20:30",areas:[["General",90,25],["Mesa frontal",20,55],["Barra alta",30,35]]},
-  ];
+  // el borrador de ejemplo sale de los mismos datos que la tienda y el resumen (Noches de Bolero)
+  const OWN=GT.EVENTS.filter(e=>e.own), uniq=a=>[...new Set(a)];
+  const CITIES=uniq(OWN.flatMap(e=>e.sessions.map(s=>s.city)));
+  $("#c").innerHTML=uniq(GT.EVENTS.map(e=>e.cat)).map(c=>`<option ${c==="Música en vivo"?"selected":""}>${esc(c)}</option>`).join("");
+  const h24=t=>{const m=/(\d+):(\d+)\s*(am|pm)/.exec(t);if(!m)return "";let h=+m[1]%12+(m[3]==="pm"?12:0);return String(h).padStart(2,"0")+":"+m[2];};
+  const BOL=GT.getEvent("bolero");
+  const SEDE0=BOL.sessions.map(s=>({city:s.city,venue:s.venue,date:s.date,doors:h24(s.doors),start:h24(s.start),areas:s.areas.map((a,i)=>[a.name,GT.CAPS.bolero[i],a.usd])}));
+  $("#pkp").value=BOL.sessions[0].hotel;
   let uid=0;
-  function areaRow(a){const i=++uid;return `<div class="arow" data-row><div class="field full"><label for="an${i}">Área</label><input id="an${i}" value="${esc(a[0])}" data-k="name"></div><div class="field"><label for="ac${i}">Aforo</label><input id="ac${i}" type="number" min="0" inputmode="numeric" value="${a[1]}" data-k="cap"></div><div class="field"><label for="ap${i}">Precio (USD)</label><input id="ap${i}" type="number" min="0" step="0.5" inputmode="decimal" value="${a[2]}" data-k="usd"></div><p class="bsout" data-bs></p><button class="btn sec rm" type="button" data-rm-area aria-label="Quitar esta área">Quitar</button></div>`;}
+  function areaRow(a){const i=++uid;return `<div class="arow" data-row><div class="field full"><label for="an${i}">Área</label><input id="an${i}" value="${esc(a[0])}" data-k="name" maxlength="60"></div><div class="field"><label for="ac${i}">Aforo</label><input id="ac${i}" type="number" min="1" max="100000" step="1" inputmode="numeric" value="${a[1]}" data-k="cap"></div><div class="field"><label for="ap${i}">Precio (USD)</label><input id="ap${i}" type="number" min="1" max="10000" step="0.5" inputmode="decimal" value="${a[2]}" data-k="usd"></div><p class="bsout" data-bs></p><button class="btn sec rm" type="button" data-rm-area data-lbl>Quitar</button></div>`;}
   function sedeCard(s,n){const i=++uid;return `<article class="sede" data-sede>
-    <div class="sede-head"><h3>Sede ${n}</h3><button class="btn sec" type="button" data-rm-sede>Quitar sede</button></div>
-    <div class="fgrid c2"><div class="field"><label for="sc${i}">Ciudad</label><select id="sc${i}">${CITIES.map(c=>`<option ${c===s.city?"selected":""}>${c}</option>`).join("")}</select></div><div class="field"><label for="sv${i}">Sede</label><input id="sv${i}" value="${esc(s.venue)}"></div></div>
-    <div class="fgrid c3"><div class="field"><label for="sd${i}">Fecha</label><input id="sd${i}" type="date" value="${s.date}"></div><div class="field"><label for="sp${i}">Abren puertas</label><input id="sp${i}" type="time" value="${s.doors}"></div><div class="field"><label for="ss${i}">Empieza el show</label><input id="ss${i}" type="time" value="${s.start}"></div></div>
+    <div class="sede-head"><h3>Sede ${n}</h3><button class="btn sec" type="button" data-rm-sede data-lbl>Quitar sede</button></div>
+    <div class="fgrid c2"><div class="field"><label for="sc${i}">Ciudad</label><select id="sc${i}">${CITIES.map(c=>`<option ${c===s.city?"selected":""}>${c}</option>`).join("")}</select></div><div class="field"><label for="sv${i}">Sede</label><input id="sv${i}" value="${esc(s.venue)}" maxlength="90" data-k="venue"></div></div>
+    <div class="fgrid c3"><div class="field"><label for="sd${i}">Fecha</label><input id="sd${i}" type="date" min="${GT.TODAY}" value="${s.date}" data-k="date"></div><div class="field"><label for="sp${i}">Abren puertas</label><input id="sp${i}" type="time" value="${s.doors}" data-k="doors"></div><div class="field"><label for="ss${i}">Empieza el show</label><input id="ss${i}" type="time" value="${s.start}" data-k="start"></div></div>
     <h4 style="margin:6px 0 10px">Áreas, aforo y precio</h4>
     <div data-areas>${s.areas.map(areaRow).join("")}</div>
     <button class="btn sec" type="button" data-add-area>+ Añadir área</button>
   </article>`;}
-  function renumber(){$$("[data-sede]").forEach((s,i)=>s.querySelector("h3").textContent="Sede "+(i+1));}
+  function renumber(){$$("[data-sede]").forEach((s,i)=>{s.querySelector("h3").textContent="Sede "+(i+1);s.querySelector("[data-rm-sede]").setAttribute("aria-label","Quitar sede "+(i+1));$$("[data-row]",s).forEach(r=>r.querySelector("[data-rm-area]").setAttribute("aria-label","Quitar área «"+(r.querySelector("[data-k=name]").value.trim()||"sin nombre")+"» de la sede "+(i+1)));});}
   function calc(){
     let cap=0,pot=0;
-    $$("[data-row]").forEach(r=>{const c=+r.querySelector('[data-k=cap]').value||0,u=+r.querySelector('[data-k=usd]').value||0;cap+=c;pot+=c*u;r.querySelector("[data-bs]").textContent=u?"≈ "+bs(toBs(u)):"";});
+    $$("[data-row]").forEach(r=>{const c=Math.min(100000,Math.max(0,+r.querySelector('[data-k=cap]').value||0)),u=Math.min(10000,Math.max(0,+r.querySelector('[data-k=usd]').value||0));cap+=c;pot+=c*u;r.querySelector("[data-bs]").textContent=u?"≈ "+bs(toBs(u)):"";});
     $("#tot").innerHTML=`<span>Sedes: <b>${$$("[data-sede]").length}</b></span><span>Aforo total: <b>${fmt(cap,0)}</b></span><span>Ingreso si se vende todo: <b>${usd(pot)}</b> (≈ ${bs(toBs(pot))} a tasa BCV ${fmt(RATE,2)}, ejemplo)</span>`;
   }
   $("#sedes").innerHTML=SEDE0.map((s,i)=>sedeCard(s,i+1)).join("");
   $("#add-sede").onclick=()=>{$("#sedes").insertAdjacentHTML("beforeend",sedeCard({city:"Maturín",venue:"",date:"",doors:"19:00",start:"20:30",areas:[["General",0,0]]},0));renumber();calc();const l=$("#sedes").lastElementChild;l.querySelector("select").focus();motion(g=>g.from(l,{autoAlpha:0,y:16,duration:.4,ease:"power3.out"}));};
   $("#sedes").addEventListener("click",e=>{
     const ra=e.target.closest("[data-rm-area]"),rs=e.target.closest("[data-rm-sede]"),aa=e.target.closest("[data-add-area]");
-    if(aa){const box=aa.closest("[data-sede]").querySelector("[data-areas]");box.insertAdjacentHTML("beforeend",areaRow(["",0,0]));box.lastElementChild.querySelector("input").focus();calc();}
-    if(ra){const row=ra.closest("[data-row]"),box=row.parentElement;if(box.children.length<2){toast("Cada sede necesita al menos un área.");return;}row.remove();calc();}
-    if(rs){if($$("[data-sede]").length<2){toast("El evento necesita al menos una sede.");return;}rs.closest("[data-sede]").remove();renumber();calc();}
+    if(aa){const box=aa.closest("[data-sede]").querySelector("[data-areas]");box.insertAdjacentHTML("beforeend",areaRow(["",0,0]));box.lastElementChild.querySelector("input").focus();renumber();calc();}
+    if(ra){const row=ra.closest("[data-row]"),box=row.parentElement;if(box.children.length<2){toast("Cada sede necesita al menos un área.");return;}const add=box.closest("[data-sede]").querySelector("[data-add-area]");row.remove();renumber();calc();add.focus();}
+    if(rs){if($$("[data-sede]").length<2){toast("El evento necesita al menos una sede.");return;}rs.closest("[data-sede]").remove();renumber();calc();$("#add-sede").focus();}
   });
-  $("#sedes").addEventListener("input",calc);
+  $("#sedes").addEventListener("input",e=>{calc();if(e.target.dataset.k==="name")renumber();if(e.target.getAttribute("aria-invalid")==="true")e.target.removeAttribute("aria-invalid");});
+  $("#n").addEventListener("input",()=>{if($("#n").value.trim()){$("#e-n").classList.remove("on");$("#n").removeAttribute("aria-invalid");}});
   $("#pk").addEventListener("change",()=>{$("#pkf").hidden=!$("#pk").checked;});
   $("#draft").onclick=()=>toast("Borrador guardado. Aún no es visible al público.");
+  // validación al publicar: marca cada campo malo y lleva el foco al primero, con el motivo en el aviso
   $("#pub").onclick=()=>{
-    const bad=!$("#n").value.trim(); $("#e-n").classList.toggle("on",bad); $("#n").setAttribute("aria-invalid",bad);
-    if(bad){$("#n").focus();return;}
-    const noPrice=$$("[data-row]").some(r=>!(+r.querySelector('[data-k=usd]').value)||!(+r.querySelector('[data-k=cap]').value));
-    if(noPrice){toast("Cada área necesita aforo y precio en USD antes de publicar.");return;}
+    $$("[aria-invalid=true]").forEach(el=>el.removeAttribute("aria-invalid"));
+    const errs=[], flag=(el,msg)=>{el.setAttribute("aria-invalid","true");errs.push([el,msg]);};
+    const bad=!$("#n").value.trim(); $("#e-n").classList.toggle("on",bad); if(bad)flag($("#n"),"El evento necesita un nombre.");
+    const f=$("#img").files[0]; if(f&&!/^image\/(jpeg|png|webp)$/.test(f.type))flag($("#img"),"El arte tiene que ser una imagen JPG, PNG o WebP.");
+    $$("[data-sede]").forEach((sd,i)=>{const n="Sede "+(i+1)+": ",v=k=>sd.querySelector("[data-k="+k+"]");
+      if(!v("venue").value.trim())flag(v("venue"),n+"falta el nombre de la sede.");
+      if(!v("date").value)flag(v("date"),n+"falta la fecha.");else if(v("date").value<GT.TODAY)flag(v("date"),n+"la fecha ya pasó.");
+      if(!v("doors").value||!v("start").value)flag(v("doors").value?v("start"):v("doors"),n+"faltan las horas.");
+      // un show que empieza antes de las 6:00 se toma como del día siguiente (puertas 23:00, show 00:30)
+      else if(v("doors").value>v("start").value&&v("start").value>="06:00")flag(v("doors"),n+"las puertas abren después de que empieza el show.");
+      $$("[data-row]",sd).forEach(r=>{const nm=r.querySelector("[data-k=name]"),c=r.querySelector("[data-k=cap]"),u=r.querySelector("[data-k=usd]");
+        if(!nm.value.trim())flag(nm,n+"un área no tiene nombre.");
+        if(!Number.isInteger(+c.value)||+c.value<1||+c.value>100000)flag(c,n+"el aforo es un número entero entre 1 y 100.000.");
+        if(!(+u.value>=1&&+u.value<=10000))flag(u,n+"el precio va de USD 1 a USD 10.000.");});});
+    if($("#pk").checked&&!(+$("#pkp").value>=1&&+$("#pkp").value<=5000))flag($("#pkp"),"El precio de la noche va de USD 1 a USD 5.000.");
+    if(errs.length){errs[0][0].focus();toast(errs[0][1]+(errs.length>1?" (y "+(errs.length-1)+" más)":""));return;}
     toast("Evento publicado (simulado). Ya aparece en la tienda.");
   };
-  calc();
+  renumber(); calc();
   motion(g=>g.from(".card,.sede",{y:16,autoAlpha:0,duration:.5,ease:"power3.out",stagger:.07,clearProps:"all"}));
 })();
 </script>

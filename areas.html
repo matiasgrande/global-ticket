@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="color-scheme" content="dark light">
+<meta name="color-scheme" content="dark">
 <title>Elige tus entradas · Global Ticket</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap">
@@ -55,41 +55,47 @@
 <script>
 (function(){
   const {currentOrder,usd,bs,toBs,store,$,$$,esc,motion,fmt,RATE,startTimer}=GT;
-  if(document.referrer.indexOf("evento.html")>-1) store.patch({deadline:null});
-  const {ev,ses}=currentOrder();
+  const q=new URLSearchParams(location.search);
+  if(q.get("e")) store.patch({eventId:q.get("e"),sessionId:q.get("s")});
+  const ord0=currentOrder(); if(GT.bounce(ord0))return;
+  const {ev,ses,key}=ord0;
   $("#back").href="evento.html?e="+ev.id+"&s="+ses.id;
   $("#title").textContent=ev.title;
-  $("#when").textContent=ses.city+" · "+ses.day+" · puertas "+ses.doors;
+  $("#when").textContent=ses.city+" · "+ses.day+(ses.doors?" · puertas "+ses.doors:" · "+ses.start);
   $("#rate").innerHTML="Tasa BCV del día: <b>"+fmt(RATE,2)+" Bs/USD</b> · ejemplo";
-  let qty=Object.assign({},store.get().qty||{});
-  const MAX=6;
-  $("#areas").innerHTML=ses.areas.map(a=>{const out=a.left===0;return `<article class="area${out?" sold":""}" data-a="${a.id}"><div><h3>${esc(a.name)}</h3>${a.note?`<p class="desc">${esc(a.note)}</p>`:""}</div><div class="pc"><span class="price">${usd(a.usd)}</span><br><span class="bsv small">${bs(toBs(a.usd))}</span></div><div class="row2"><span>${out?`<span class="tag danger">Agotado</span> <button type="button" class="btn sec sm" data-wl-open="${a.id}" aria-expanded="false" style="margin-left:6px">Avísame</button>`:a.left<=15?`<span class="tag">Quedan ${a.left}</span>`:`<span class="small muted">Disponibles: ${a.left}</span>`}</span>${out?"":`<div class="stepper" role="group" aria-label="Cantidad de entradas ${esc(a.name)}"><button type="button" data-d="-1" aria-label="Quitar una entrada ${esc(a.name)}">&minus;</button><output aria-live="polite">0</output><button type="button" data-d="1" aria-label="Añadir una entrada ${esc(a.name)}">+</button></div>`}</div>${out?`<div class="wl-slot" data-wl-slot="${a.id}" hidden style="grid-column:1/-1">${GT.waitlistForm(esc(a.name)+" está agotada","wl-"+a.id)}</div>`:""}</article>`}).join("");
+  let qty=Object.assign({},ord0.qty);
+  const MAX=GT.MAX_ORDER; // máximo por orden, sumando todas las áreas
+  $("#areas").innerHTML=ses.areas.map(a=>{const out=a.left===0;return `<article class="area${out?" sold":""}" data-a="${a.id}"><div><h3>${esc(a.name)}</h3>${a.note?`<p class="desc">${esc(a.note)}</p>`:""}</div><div class="pc"><span class="price">${usd(a.usd)}</span><br><span class="bsv small">${bs(toBs(a.usd))}</span></div><div class="row2"><span>${out?`<span class="tag danger">Agotado</span> <button type="button" class="btn sec sm" data-wl-open="${a.id}" aria-expanded="false" style="margin-left:6px">Avísame</button>`:a.left<=15?`<span class="tag">Quedan ${a.left}</span>`:`<span class="small muted">Disponibles: ${a.left}</span>`}</span>${out?"":`<div class="stepper" role="group" aria-label="Cantidad de entradas ${esc(a.name)}"><button type="button" data-d="-1" aria-label="Quitar una entrada ${esc(a.name)}">&minus;</button><output aria-live="polite">0</output><button type="button" data-d="1" aria-label="Añadir una entrada ${esc(a.name)}">+</button></div>`}</div>${out?`<div class="wl-slot" data-wl-slot="${a.id}" hidden style="grid-column:1/-1">${GT.waitlistForm(a.name+" está agotada","wl-"+a.id)}</div>`:""}</article>`}).join("");
   GT.bindWaitlist($("#areas"));
   if(!ses.hotel){$("#hotelbox").hidden=true;store.patch({hotel:false});}
   $("#hname").textContent="Una noche en Tibisay "+ses.city; $("#hprice").textContent="+"+usd(ses.hotel); $("#hbs").textContent="+"+bs(toBs(ses.hotel))+" · tasa BCV";
   $("#hnote").textContent="Entrada + habitación en un solo pago. Si prefieres solo la entrada, ignora esto.";
-  $("#hotel").checked=!!store.get().hotel; if($("#hotel").checked) $("#hdet").open=true;
+  $("#hotel").checked=ord0.hotel; if($("#hotel").checked) $("#hdet").open=true;
   let expired=false;
   function render(){
-    $$(".area").forEach(el=>{const a=ses.areas.find(x=>x.id===el.dataset.a);const n=qty[a.id]||0;el.classList.toggle("on",n>0);const o=$("output",el);if(!o)return;o.textContent=n;const lim=Math.min(MAX,a.left);$('[data-d="-1"]',el).disabled=n<=0||expired;$('[data-d="1"]',el).disabled=n>=lim||expired;});
-    store.patch({qty,hotel:$("#hotel").checked});
-    const o=currentOrder();
+    const tot=Object.values(qty).reduce((t,v)=>t+v,0);
+    $$(".area").forEach(el=>{const a=ses.areas.find(x=>x.id===el.dataset.a);const n=qty[a.id]||0;el.classList.toggle("on",n>0);const o=$("output",el);if(!o)return;o.textContent=n;const lim=Math.min(a.left,n+MAX-tot);$('[data-d="-1"]',el).disabled=n<=0||expired;$('[data-d="1"]',el).disabled=n>=lim||expired;});
+    store.patch({qty,qtyFor:key,hotel:$("#hotel").checked});
+    const o=currentOrder({eventId:ev.id,sessionId:ses.id,qtyFor:key,qty,hotel:$("#hotel").checked}); // de las variables locales: funciona aun sin storage
     $("#lines").innerHTML=o.lines.length?o.lines.map(l=>`<div class="ln"><span>${l.id==="hotel"?"":l.n+" × "}${esc(l.name)}</span><span>${usd(l.sub)}</span></div>`).join("")+`<div class="ln tax"><span>Impuestos (IVA/IGTF)</span><span>Por definir</span></div>`:"";
-    const fu=v=>usd(Math.round(v)), fb=v=>bs(v)+" · tasa BCV";
+    const fu=v=>usd(Math.round(v*100)/100), fb=v=>bs(v)+" · tasa BCV";
     GT.countTo($("#t-usd"),o.total,fu); GT.countTo($("#t-ves"),o.totalBs,fb);
     GT.countTo($("#pb-usd"),o.total,fu); GT.countTo($("#pb-ves"),o.totalBs,v=>o.total?fb(v):"");
     $("#pb-n").textContent=o.count?o.count+(o.count===1?" entrada":" entradas"):"Sin entradas";
     const ok=o.count>0&&!expired;
     ["go","go2"].forEach(id=>{const g=$("#"+id);g.setAttribute("aria-disabled",!ok);g.tabIndex=ok?0:-1;});
-    $("#emptymsg").hidden=o.count>0;
+    $("#emptymsg").hidden=o.count>0&&o.count<MAX;
+    $("#emptymsg").textContent=o.count>=MAX?"Máximo "+MAX+" entradas por orden.":"Elige al menos una entrada para continuar.";
   }
   $("#areas").addEventListener("click",e=>{const b=e.target.closest("button[data-d]");if(!b||expired)return;const id=b.closest(".area").dataset.a;qty[id]=Math.max(0,(qty[id]||0)+(+b.dataset.d));render();
     motion(g=>g.fromTo(b.closest(".stepper").querySelector("output"),{scale:1.3},{scale:1,duration:.35,ease:"power3.out"}));});
   $("#areas").addEventListener("click",e=>{const w=e.target.closest("[data-wl-open]");if(!w)return;const slot=$('[data-wl-slot="'+w.dataset.wlOpen+'"]');const open=slot.hidden;slot.hidden=!open;w.setAttribute("aria-expanded",open);if(open)$("input",slot).focus();});
   $("#hotel").addEventListener("change",render);
-  ["go","go2"].forEach(id=>$("#"+id).addEventListener("click",e=>{if(e.currentTarget.getAttribute("aria-disabled")==="true")e.preventDefault();}));
+  ["go","go2"].forEach(id=>$("#"+id).addEventListener("click",e=>{if(e.currentTarget.getAttribute("aria-disabled")==="true"){e.preventDefault();return;}
+    // sin almacenamiento la orden no llega a la página de pago: avisar en vez de rebotar en silencio
+    if(!store.ok){e.preventDefault();GT.toast("Tu navegador bloquea el almacenamiento de esta página. Actívalo (o sal del modo privado estricto) para continuar con la compra.");}}));
   const timer=startTimer($("#timer"),()=>{expired=true;$("#expired").hidden=false;render();});
-  $("#rebook").addEventListener("click",()=>{timer.reset();expired=false;$("#expired").hidden=true;render();});
+  $("#rebook").addEventListener("click",()=>{timer.reset();expired=false;$("#expired").hidden=true;render();$("#title").setAttribute("tabindex","-1");$("#title").focus();});
   render();
   motion(g=>{g.from(".area",{y:22,autoAlpha:0,duration:.55,ease:"power3.out",stagger:.09,clearProps:"all"});g.from("#timer",{y:-10,autoAlpha:0,duration:.45,ease:"power3.out"});});
 })();
